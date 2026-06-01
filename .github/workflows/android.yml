@@ -28,7 +28,7 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: temurfind .github -type fin
+          distribution: temurin
           java-version: 21
 
       - name: Sync Capacitor

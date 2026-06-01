@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build-apk:
@@ -27,7 +28,7 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: temurfind .github -type fin
           java-version: 21
 
       - name: Sync Capacitor

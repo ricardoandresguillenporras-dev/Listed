@@ -1,0 +1,13 @@
+* {
+    margin: 0;
+      padding: 0;
+        box-sizing: border-box;
+          -webkit-tap-highlight-color: transparent;
+          }
+
+          body {
+            background: #111;
+              font-family: 'Nunito', 'Segoe UI', sans-serif;
+                overflow-x: hidden;
+                }
+}

@@ -14,22 +14,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Java          # ← moved BEFORE Node/npm steps
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21        # ← keep 21 if Capacitor 7+, use 17 if Capacitor 5/6
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
+      - name: Cache Gradle        # ← new: saves ~2-4 min per run
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci               # ← was: npm install --legacy-peer-deps
 
       - name: Build React App
         run: npm run build
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
 
       - name: Sync Capacitor
         run: npx cap sync android
@@ -38,7 +48,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace   # ← added --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

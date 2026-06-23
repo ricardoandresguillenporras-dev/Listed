@@ -1,13 +1,21 @@
 package com.listed.app;
 
+import androidx.activity.BackEventCompat;
+import androidx.activity.OnBackPressedCallback;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
 
     @Override
-    public void onBackPressed() {
-        // Block ALL back press handling from Android.
-        // Capacitor 8 fires backButton to JS automatically before this.
-        // Do NOT call super — that's what causes minimizing.
+    public void onCreate(android.os.Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                // Capacitor 8 handles the backButton event internally.
+                // We intercept here and do nothing — JS handles all navigation.
+            }
+        });
     }
 }

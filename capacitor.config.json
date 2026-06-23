@@ -1,5 +1,10 @@
 {
   "appId": "com.listed.app",
   "appName": "Listed",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "App": {
+      "disableBackButtonHandler": false
+    }
+  }
 }

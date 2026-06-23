@@ -3462,8 +3462,8 @@ export default function SuperLista() {
   useEffect(() => {
     let listenerHandle = null;
 
-    const register = async () => {
-      listenerHandle = await CapApp.addListener("backButton", ({ canGoBack }) => {
+    // register synchronously — no async/await
+    const handle = CapApp.addListener("backButton", ({ canGoBack }) => {
         const { view: currentView, showProfile: currentShowProfile } = navStateRef.current;
 
         // 1. Profile modal open → close it
@@ -3518,10 +3518,10 @@ export default function SuperLista() {
       });
     };
 
-    register();
+
 
     return () => {
-      listenerHandle?.remove();
+      handle.then(h => h.remove());
       if (exitToastTimer.current) clearTimeout(exitToastTimer.current);
     };
   }, []); // ← empty deps: register once, read state via ref

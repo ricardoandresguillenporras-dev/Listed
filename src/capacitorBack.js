@@ -1,26 +1,20 @@
-import { App as CapacitorApp } from '@capacitor/app';
-
+// capacitorBack.js
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚠️  THIS FILE IS INTENTIONALLY A NO-OP.
+//
+// Back-button handling is owned entirely by the useEffect inside App.jsx,
+// which registers a single Capacitor listener on mount and removes it on
+// unmount. Registering a second listener here caused a race condition:
+//
+//   • App.jsx listener → shows "press again to exit" toast  ✅
+//   • This listener   → sees window.history.length === 1
+//                      → calls CapacitorApp.exitApp() immediately  ❌
+//
+// Result: the app minimized/killed on the very first back press at root,
+// making the toast useless and the UX broken.
+//
+// Do NOT add any Capacitor back-button logic here.
+// ─────────────────────────────────────────────────────────────────────────────
 export function registerBackButtonHandler() {
-  try {
-    if (!CapacitorApp || typeof CapacitorApp.addListener !== 'function') return;
-
-    const handler = () => {
-      // If the web history stack has entries, go back. Otherwise exit the app (Android).
-      if (window.history && window.history.length > 1) {
-        window.history.back();
-      } else {
-        CapacitorApp.exitApp();
-      }
-    };
-
-    const listener = CapacitorApp.addListener('backButton', handler);
-
-    // expose an unregister function to the window so we don't register multiple times
-    if (!window.__capBackUnregister) {
-      window.__capBackUnregister = () => listener && listener.remove && listener.remove();
-    }
-  } catch (e) {
-    // ignore in non-capacitor/web environments
-    // console.warn('Could not register Capacitor back handler', e);
-  }
+  // intentionally empty — see App.jsx useEffect for the real handler
 }

@@ -3450,78 +3450,89 @@ export default function SuperLista() {
   // backButton event instead, which gives us full control.
   //
   // Strategy:
-  //   • Single listener registered on mount, cleaned up on unmount.
-  //   • All nav state read from a ref so the listener is never stale.
-  //   • At root: first press → toast; second press within 2.4 s → App.exitApp().
+  //   • SINGLE listener registered here. capacitorBack.js is a no-op — two
+  //     listeners racing each other was the root cause of instant-minimize.
+  //   • All nav state is read from navStateRef so the closure is never stale.
+  //   • At root: first press → toast; second press within 2 s → exitApp().
+  //   • Cleanup stores the resolved PluginListenerHandle synchronously via
+  //     a ref, avoiding a .then() race on unmount.
 
-  const navStateRef = useRef({ view: "lists", showProfile: false });
+  const navStateRef   = useRef({ view: "lists", showProfile: false });
+  const listenerRef   = useRef(null); // stores the resolved PluginListenerHandle
 
   // Keep the ref in sync with state (no re-render cost)
   useEffect(() => { navStateRef.current = { view, showProfile }; }, [view, showProfile]);
 
   useEffect(() => {
-    let listenerHandle = null;
+    // addListener returns a Promise<PluginListenerHandle> — resolve it once
+    // and store it so cleanup never races against an unresolved Promise.
+    CapApp.addListener("backButton", () => {
+      const { view: currentView, showProfile: currentShowProfile } = navStateRef.current;
 
-    // register synchronously — no async/await
-    const handle = CapApp.addListener("backButton", ({ canGoBack }) => {
-        const { view: currentView, showProfile: currentShowProfile } = navStateRef.current;
+      // 1. Profile modal open → close it
+      if (currentShowProfile) {
+        Sounds.navBack();
+        setShowProfile(false);
+        setNavActive("");
+        setProfileTab("profile");
+        return;
+      }
 
-        // 1. Profile modal open → close it
-        if (currentShowProfile) {
-          Sounds.navBack();
-          setShowProfile(false);
-          setNavActive("");
-          setProfileTab("profile");
-          return;
-        }
+      // 2. addItems → list
+      if (currentView === "addItems") {
+        Sounds.navBack();
+        setView("list");
+        return;
+      }
 
-        // 2. addItems → list
-        if (currentView === "addItems") {
-          Sounds.navBack();
-          setView("list");
-          return;
-        }
+      // 3. list detail → lists home
+      if (currentView === "list") {
+        Sounds.navBack();
+        setView("lists");
+        setActiveListId(null);
+        return;
+      }
 
-        // 3. list detail → lists home
-        if (currentView === "list") {
-          Sounds.navBack();
-          setView("lists");
-          setActiveListId(null);
-          return;
-        }
+      // 4. stats → lists home
+      if (currentView === "stats") {
+        Sounds.navBack();
+        setNavActive("home");
+        setView("lists");
+        return;
+      }
 
-        // 4. stats → lists home
-        if (currentView === "stats") {
-          Sounds.navBack();
-          setNavActive("home");
-          setView("lists");
-          return;
-        }
+      // 5. Already at root — "press twice to exit" pattern
+      if (exitToastTimer.current) {
+        // Second press within 2 s → exit cleanly
+        clearTimeout(exitToastTimer.current);
+        exitToastTimer.current = null;
+        setShowExitToast(false);
+        CapApp.exitApp();   // exitApp, not minimizeApp — user explicitly wants out
+        return;
+      }
 
-        // 5. Already at root — handle explicitly so WebView doesn't also fire
-        if (exitToastTimer.current) {
-          // Second press within 2.4 s → minimize (don't force-kill)
-          clearTimeout(exitToastTimer.current);
-          exitToastTimer.current = null;
-          setShowExitToast(false);
-          CapApp.minimizeApp();
-          return;
-        }
-
-        // First press at root → show toast, suppress default back behavior
-        setShowExitToast(true);
-        exitToastTimer.current = setTimeout(() => {
-          setShowExitToast(false);
-          exitToastTimer.current = null;
-        }, 2400);
-        // Do NOT call minimizeApp here — we want to stay in the app
-      });
+      // First press at root → show toast, do nothing else
+      setShowExitToast(true);
+      exitToastTimer.current = setTimeout(() => {
+        setShowExitToast(false);
+        exitToastTimer.current = null;
+      }, 2000); // 2 s window — standard Android "double-back to exit" timing
+    }).then(handle => {
+      listenerRef.current = handle; // store once resolved
+    });
 
     return () => {
-      handle.then(h => h.remove());
-      if (exitToastTimer.current) clearTimeout(exitToastTimer.current);
+      // Remove listener using the stored handle (no .then() race on teardown)
+      if (listenerRef.current) {
+        listenerRef.current.remove();
+        listenerRef.current = null;
+      }
+      if (exitToastTimer.current) {
+        clearTimeout(exitToastTimer.current);
+        exitToastTimer.current = null;
+      }
     };
-  }, []); // ← empty deps: register once, read state via ref
+  }, []); // empty deps: register once on mount, read state via ref
 
   const theme = THEMES[themeName];
   const [themeReveal, setThemeReveal] = useState(false);
@@ -4170,6 +4181,12 @@ body::after {
   100% { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
 }
 
+/* ── Exit toast countdown bar (burns down in 2 s matching the timer) ── */
+@keyframes slExitProgress {
+  0%   { width: 100%; }
+  100% { width: 0%; }
+}
+
 /* ── Accessibility & global polish ─────────────────────────────────── */
 html {
   scroll-behavior: smooth;
@@ -4396,26 +4413,42 @@ button { transition:transform 0.15s var(--ease-spring), box-shadow 0.15s ease, b
           left: "50%",
           transform: "translateX(-50%)",
           zIndex: 99999,
-          background: "rgba(30,20,10,0.88)",
-          backdropFilter: "blur(16px) saturate(160%)",
-          WebkitBackdropFilter: "blur(16px) saturate(160%)",
+          background: "rgba(30,20,10,0.92)",
+          backdropFilter: "blur(20px) saturate(180%)",
+          WebkitBackdropFilter: "blur(20px) saturate(180%)",
           color: "#fff",
-          padding: "12px 24px",
-          borderRadius: 100,
-          fontSize: 14,
+          padding: "10px 20px 8px",
+          borderRadius: 18,
+          fontSize: 13,
           fontWeight: 700,
           fontFamily: "var(--font-body)",
           letterSpacing: "0.01em",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.10)",
           whiteSpace: "nowrap",
           animation: "slExitToast 0.28s cubic-bezier(0.34,1.4,0.64,1) both",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
-          gap: 8,
+          gap: 7,
           pointerEvents: "none",
+          minWidth: 220,
         }}>
-          <span style={{ fontSize: 18 }}>👋</span>
-          Presiona atrás de nuevo para salir
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 17 }}>👋</span>
+            Presiona atrás de nuevo para salir
+          </div>
+          {/* Progress bar burns down over 2 s to show the exit window closing */}
+          <div style={{
+            width: "100%", height: 3, borderRadius: 3,
+            background: "rgba(255,255,255,0.18)",
+            overflow: "hidden",
+          }}>
+            <div style={{
+              height: "100%", borderRadius: 3,
+              background: "rgba(255,255,255,0.72)",
+              animation: "slExitProgress 2s linear forwards",
+            }} />
+          </div>
         </div>
       )}
     </>

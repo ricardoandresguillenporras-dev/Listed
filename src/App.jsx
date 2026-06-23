@@ -3516,9 +3516,6 @@ export default function SuperLista() {
         }, 2400);
         // Do NOT call minimizeApp here — we want to stay in the app
       });
-    };
-
-
 
     return () => {
       handle.then(h => h.remove());

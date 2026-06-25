@@ -376,6 +376,17 @@ const UNITS = ["pza", "kg", "g", "L", "ml", "paq", "cja"];
 const HOLD_MS = 1000;
 const genId = () => Math.random().toString(36).substr(2, 9);
 const totalCost = (items) => items.reduce((s, it) => s + (parseFloat(it.price) || 0) * (it.qty || 1), 0);
+// Item lifecycle stage: "inventory" (not yet selected) → "shopping" (in Lista de Compras) → "cart" (En el Carrito de Compras).
+// Falls back to the legacy boolean `checked` field for lists saved before this version.
+const stageOf = (it) => it.stage || (it.checked ? "cart" : "inventory");
+const isInCart = (it) => stageOf(it) === "cart";
+// Formats an amount >= 1000 as "Xk" or "X.Xk" without misleading rounding —
+// e.g. 5000 -> "5k", 1500 -> "1.5k" (not "2k"), 12345 -> "12.3k".
+const formatK = (n) => {
+  const v = n / 1000;
+  const rounded = Math.round(v * 10) / 10; // one decimal of precision
+  return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1)}k`;
+};
 // Strips accents/tildes, commas, extra spaces — makes search accent- and punctuation-insensitive
 const normalizeSearch = (str) =>
   str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[,\s]+/g, " ").trim().toLowerCase();
@@ -383,11 +394,11 @@ const normalizeSearch = (str) =>
 // ── Styles (theme-aware) ──────────────────────────────────────────────────────
 const makeStyles = (theme) => ({
   app: {
-    maxWidth: 430, margin: "0 auto", minHeight: "100svh",
+    maxWidth: 430, margin: "0 auto", height: "100svh",
     background: "transparent", display: "flex", flexDirection: "column",
     fontFamily: "'Nunito', 'DM Sans', 'Segoe UI', sans-serif",
     color: theme.isDark ? theme.textPrimary : "#1A2118",
-    isolation: "isolate",
+    isolation: "isolate", overflow: "hidden",
   },
   header: {
     display: "flex", alignItems: "center", padding: "14px 16px 12px",
@@ -402,7 +413,7 @@ const makeStyles = (theme) => ({
     gap: 10,
     position: "sticky", top: 0, zIndex: 10,
   },
-  body: { flex: 1, overflowY: "auto", padding: "8px 0 96px" },
+  body: { flex: 1, minHeight: 0, overflowY: "auto", padding: "8px 0 96px" },
   // bottomBar height is exposed as --bottombar-h (see :root injection below) so
   // the FAB above it can derive its offset from the bar's real height instead of
   // a hardcoded magic number that breaks the moment padding/content changes.
@@ -529,6 +540,45 @@ const ITEM_ICONS = {
   "Bolsas de basura": "🗑️",
 };
 
+// ── Auto-icon guesser for freely-typed custom item names ───────────────────
+// Builds a normalized lookup once, then on every keystroke tries (in order):
+//   1) exact match against known item names (accent/case-insensitive)
+//   2) a known item name that starts with what's typed (e.g. "manz" → "Manzanas")
+//   3) a known item name contained in what's typed, or vice versa (e.g.
+//      "leche deslactosada" → "Leche", "tomate cherry" → "Tomates")
+// Falls back to null when nothing reasonable matches, so the caller can decide
+// whether to keep the current emoji or use a generic default.
+const NORMALIZED_ITEM_ICONS = Object.entries(ITEM_ICONS).map(([name, emoji]) => ({
+  name, emoji, norm: normalizeSearch(name),
+}));
+
+const guessEmojiForName = (rawName) => {
+  const q = normalizeSearch(rawName || "");
+  if (!q) return null;
+
+  // 1) Exact match
+  const exact = NORMALIZED_ITEM_ICONS.find(it => it.norm === q);
+  if (exact) return exact.emoji;
+
+  // 2) Prefix match — typing "manz" should already suggest "🍎" for "Manzanas"
+  const prefixMatches = NORMALIZED_ITEM_ICONS.filter(it => it.norm.startsWith(q) || q.startsWith(it.norm));
+  if (prefixMatches.length) {
+    // Prefer the closest length match (shortest difference) for the tightest fit
+    prefixMatches.sort((a, b) => Math.abs(a.norm.length - q.length) - Math.abs(b.norm.length - q.length));
+    return prefixMatches[0].emoji;
+  }
+
+  // 3) Substring match either direction — catches "tomate cherry", "leche 2%", etc.
+  const subMatches = NORMALIZED_ITEM_ICONS.filter(it => it.norm.includes(q) || q.includes(it.norm));
+  if (subMatches.length) {
+    subMatches.sort((a, b) => Math.abs(a.norm.length - q.length) - Math.abs(b.norm.length - q.length));
+    return subMatches[0].emoji;
+  }
+
+  return null;
+};
+
+
 // ── useDragToDismiss ──────────────────────────────────────────────────────────
 // Drag-to-close behavior for bottom sheets (ProfileModal, ContextMenu, EditModal).
 // The drag handle/header renders a "grab bar" already — this hook is what makes
@@ -653,6 +703,119 @@ function ItemIcon({ name, category, emoji, size=32, emojiSize=24 }) {
   return <span style={{ fontSize:emojiSize, width:size, textAlign:"center", lineHeight:1, flexShrink:0, display:"inline-block" }}>{icon}</span>;
 }
 
+
+// ── Swipe Tab Container — deslizar de lado a lado entre Inicio y Estadísticas ──
+const TAB_ORDER = ["lists", "stats"];
+const TAB_W = 100 / TAB_ORDER.length; // cada pantalla ocupa 50% de la tira de 200%
+
+const SwipeTabContainer = ({ tab, onTabChange, children }) => {
+  const tabIdx = Math.max(0, TAB_ORDER.indexOf(tab));
+  const containerRef = useRef(null);
+  const startX = useRef(null);
+  const startY = useRef(null);
+  const dx = useRef(0);
+  // null = sin decidir, true = horizontal, false = vertical
+  const direction = useRef(null);
+  const dragging  = useRef(false);
+
+  /* translateX de la tira: cada paso mueve un ancho de pantalla (= TAB_W%) */
+  const baseTranslate = (idx, extraPx = 0) =>
+    `translateX(calc(${idx * -TAB_W}% + ${extraPx}px))`;
+
+  const applyTranslate = useCallback((extraPx = 0, animated = false) => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.style.transition = animated ? "transform 0.32s cubic-bezier(.22,1,.36,1)" : "none";
+    el.style.transform = baseTranslate(tabIdx, extraPx);
+  }, [tabIdx]); // baseTranslate es una función pura de tabIdx — seguro inline
+
+  // Centrar en la posición correcta cada vez que cambia el tab (tap en BottomNav, etc.)
+  useEffect(() => { applyTranslate(0, true); }, [tab, applyTranslate]);
+
+  const startDrag = (clientX, clientY) => {
+    startX.current = clientX;
+    startY.current = clientY;
+    dx.current = 0;
+    direction.current = null;
+    dragging.current = true;
+    applyTranslate(0, false); // congelar, sin transición CSS durante el arrastre
+  };
+
+  const moveDrag = (clientX, clientY, evt) => {
+    if (!dragging.current || startX.current === null) return;
+    const moveX = clientX - startX.current;
+    const moveY = clientY - startY.current;
+
+    // Bloquear el eje en el primer movimiento decisivo (> 8px en cualquier eje)
+    if (direction.current === null && (Math.abs(moveX) > 8 || Math.abs(moveY) > 8)) {
+      direction.current = Math.abs(moveX) >= Math.abs(moveY) ? "h" : "v";
+    }
+    if (direction.current !== "h") return; // scroll vertical — no interferir
+
+    if (evt?.cancelable) evt.preventDefault(); // evitar scroll de página al deslizar tabs
+
+    // Rubber-band en los bordes
+    const atLeft  = tabIdx === 0 && moveX > 0;
+    const atRight = tabIdx === TAB_ORDER.length - 1 && moveX < 0;
+    dx.current = (atLeft || atRight) ? moveX * 0.18 : moveX;
+
+    applyTranslate(dx.current, false);
+  };
+
+  const endDrag = () => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    if (direction.current !== "h") { direction.current = null; return; }
+
+    const THRESHOLD = window.innerWidth * 0.28;
+    if      (dx.current < -THRESHOLD && tabIdx < TAB_ORDER.length - 1) onTabChange(TAB_ORDER[tabIdx + 1]);
+    else if (dx.current >  THRESHOLD && tabIdx > 0)                     onTabChange(TAB_ORDER[tabIdx - 1]);
+    else                                                                  applyTranslate(0, true);
+
+    startX.current = null;
+    dx.current = 0;
+    direction.current = null;
+  };
+
+  // Touch (móvil)
+  const onTouchStart = (e) => startDrag(e.touches[0].clientX, e.touches[0].clientY);
+  const onTouchMove  = (e) => moveDrag(e.touches[0].clientX, e.touches[0].clientY, e);
+  const onTouchEnd   = endDrag;
+
+  // Mouse (escritorio / preview) — mismo gesto con botón izquierdo
+  const onMouseDown = (e) => startDrag(e.clientX, e.clientY);
+  const onMouseMove  = (e) => moveDrag(e.clientX, e.clientY, e);
+  const onMouseUp    = endDrag;
+  const onMouseLeave = () => { if (dragging.current) endDrag(); };
+
+  return (
+    <div style={{ flex:1, minHeight:0, overflow:"hidden", position:"relative", display:"flex", flexDirection:"column" }}>
+      <div
+        ref={containerRef}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
+        style={{
+          display:"flex",
+          flexDirection:"row",
+          width:`${TAB_ORDER.length * 100}%`,  // 200vw total
+          height:"100%",
+          transform: baseTranslate(tabIdx),
+          willChange:"transform",
+          backfaceVisibility:"hidden",
+          WebkitBackfaceVisibility:"hidden",
+          transformStyle:"preserve-3d",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
 
 // ── Bottom Nav ────────────────────────────────────────────────────────────────
 function BottomNav({ onNewList, onStats, onProfile, active, theme = {} }) {
@@ -830,7 +993,7 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
                   <button key={amt} onClick={() => setBudget(String(amt))}
                     onContextMenu={(e) => { e.preventDefault(); removeAmt(amt); }}
                     style={{ background:budget===String(amt)?"var(--accent)":"rgba(0,0,0,0.05)", border:"1.5px solid", borderColor:budget===String(amt)?"var(--accent)":"transparent", borderRadius:20, padding:"7px 15px", color:budget===String(amt)?"#FFFFFF":"#8A8075", fontSize:13, fontWeight:700, cursor:"pointer", transition:"all .15s", position:"relative" }}>
-                    {sym}{amt>=1000 ? `${(amt/1000).toFixed(0)}k` : amt}
+                    {sym}{amt>=1000 ? formatK(amt) : amt}
                   </button>
                 ))}
                 {/* Botón para agregar monto */}
@@ -1023,9 +1186,14 @@ function EditModal({ item, onClose, onSave, sym }) {
 
 // ── SwipeItem ─────────────────────────────────────────────────────────────────
 const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlus, onDelete, onContextMenu, editingPriceId, tempPrice, setTempPrice, setEditingPriceId, savePrice, sym }) {
+  // item.stage: "inventory" | "shopping" | "cart"
+  // Swiping left always means "remove from this sub-list":
+  //   - in inventory     → actually delete the item
+  //   - in shopping/cart → demote back to inventory (never deleted)
+  const stage = item.stage || "inventory";
   const rowRef   = useRef(null);
   const wrapRef  = useRef(null);
-  const swipeState = useRef({ startX:0, curX:0, dragging:false, hasMoved:false, holdTimer:null });
+  const swipeState = useRef({ startX:0, startY:0, curX:0, dragging:false, hasMoved:false, axis:null, holdTimer:null });
   // Pending-uncheck animation state — brief exit before toggling
   const [exiting, setExiting] = useState(false);
   const qty = item.qty||1;
@@ -1051,8 +1219,9 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
   const onStart = useCallback((e) => {
     if (e.target.closest("button")||e.target.closest("input")) return;
     const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
     const s = swipeState.current;
-    s.startX=cx; s.curX=0; s.dragging=true; s.hasMoved=false;
+    s.startX=cx; s.startY=cy; s.curX=0; s.dragging=true; s.hasMoved=false; s.axis=null;
     if (rowRef.current) rowRef.current.style.transition="none";
     startHold();
   }, [startHold]);
@@ -1060,16 +1229,37 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
   const onMove = useCallback((e) => {
     const s = swipeState.current;
     if (!s.dragging) return;
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - s.startX;
-    s.curX=x;
-    if (Math.abs(x)>8) { s.hasMoved=true; cancelHold(); }
-    if (rowRef.current) rowRef.current.style.transform=`translate3d(${x}px,0,0)`;
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    const dx = cx - s.startX;
+    const dy = cy - s.startY;
+
+    // Direction lock: decide once movement is big enough whether this is a
+    // horizontal swipe (handled by us) or a vertical scroll (let browser handle it).
+    if (s.axis === null) {
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        s.axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      }
+    }
+
+    if (s.axis === "y") {
+      // Vertical scroll in progress — release control entirely, don't drag the row.
+      s.dragging = false;
+      cancelHold();
+      return;
+    }
+
+    if (s.axis !== "x") return; // not yet decided, mouse/touch hasn't moved enough
+
+    s.curX=dx;
+    if (!s.hasMoved) { s.hasMoved=true; cancelHold(); }
+    if (rowRef.current) rowRef.current.style.transform=`translate3d(${dx}px,0,0)`;
     // GPU-composited opacity transition for swipe indicators
     const bgL = wrapRef.current?.querySelector(".sl-bg-left");
     const bgR = wrapRef.current?.querySelector(".sl-bg-right");
     if (bgL&&bgR) {
-      bgL.style.opacity = x < -20 ? Math.min(1, (Math.abs(x)-20)/52) : "0";
-      bgR.style.opacity = x >  20 ? Math.min(1, (x-20)/52)           : "0";
+      bgL.style.opacity = dx < -20 ? Math.min(1, (Math.abs(dx)-20)/52) : "0";
+      bgR.style.opacity = dx >  20 ? Math.min(1, (dx-20)/52)           : "0";
     }
     if (e.cancelable) e.preventDefault();
   }, [cancelHold]);
@@ -1086,7 +1276,7 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
       if (s.curX < -THRESHOLD) {
         Sounds.deleteItem();
         if (rowRef.current) rowRef.current.style.transform="translate3d(-110%,0,0)";
-        setTimeout(() => onDelete(item.id), 220);
+        setTimeout(() => onDelete(item.id, stage), 220);
       } else if (s.curX > THRESHOLD) {
         Sounds.checkItem();
         onToggle(item.id, true);
@@ -1120,11 +1310,11 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
     setTimeout(() => { setExiting(false); onToggle(item.id); }, 160);
   }, [item.id, item.emoji, onToggle]);
 
-  // ── Checked item: in-the-bag style ──────────────────────────────────────────
-  if (item.checked) {
+  // ── Cart item: in-the-bag style ─────────────────────────────────────────────
+  if (stage === "cart") {
     return (
       <div ref={wrapRef} style={{ position:"relative", overflow:"hidden", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemBounceIn .38s cubic-bezier(.34,1.56,.64,1) both", contain:"layout style paint", willChange:"transform" }}>
-        <div className="sl-bg-left" style={{ position:"absolute", inset:0, background:"#FBDADA", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-end", paddingRight:22, fontSize:14, fontWeight:700, color:"#EF4444", gap:8, transition:"opacity .12s ease" }}>🗑 Eliminar</div>
+        <div className="sl-bg-left" style={{ position:"absolute", inset:0, background:"#FDF1D6", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-end", paddingRight:22, fontSize:14, fontWeight:700, color:"#B45309", gap:8, transition:"opacity .12s ease" }}>↩ A inventario</div>
         <div ref={rowRef}
           style={{ display:"flex", alignItems:"center", padding:"10px 14px", gap:10, background:"color-mix(in srgb, var(--accent) 7%, var(--cardBg))", position:"relative", touchAction:"pan-y", userSelect:"none", borderBottom:"1px solid #EFEAE0", cursor:"pointer", willChange:"transform" }}
           onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd}
@@ -1135,7 +1325,7 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
           {/* soft left accent bar */}
           <div style={{ position:"absolute", left:0, top:6, bottom:6, width:3, borderRadius:3, background:"var(--accent)", opacity:.45 }} />
 
-          {/* check circle – soft green, tappable to uncheck */}
+          {/* check circle – soft green, tappable to send back to Lista de Compras */}
           <button onClick={handleUncheck}
             style={{ width:28, height:28, borderRadius:"50%", border:"2px solid var(--accent)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, background:"var(--accent)", color:"#fff", fontSize:13, fontWeight:900, transition:"transform .15s ease", animation:"slCheckPop .3s cubic-bezier(.34,1.56,.64,1)" }}
             onMouseDown={(e) => { e.currentTarget.style.transform="scale(0.88)"; }}
@@ -1163,7 +1353,52 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
     );
   }
 
-  // ── Unchecked item ─────────────────────────────────────────────────────────
+  // ── Shopping-list item: "in lista de compras" style ────────────────────────
+  if (stage === "shopping") {
+    return (
+      <div ref={wrapRef} className="item-stagger" style={{ position:"relative", overflow:"hidden", borderBottom:"1px solid #EFEAE0", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemSpring .30s var(--ease-spring) both", contain:"layout style paint", willChange:"transform" }}>
+        <div className="sl-bg-left"  style={{ position:"absolute", inset:0, background:"#FDF1D6", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-end",  paddingRight:22, fontSize:14, fontWeight:700, color:"#B45309", gap:8, transition:"opacity .12s ease" }}>↩ A inventario</div>
+        <div className="sl-bg-right" style={{ position:"absolute", inset:0, background:"#DCEFF9", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-start", paddingLeft:22, fontSize:14, fontWeight:700, color:"#0369A1", gap:8, transition:"opacity .12s ease" }}>🛍 Al carrito</div>
+        <div ref={rowRef}
+          style={{ display:"flex", alignItems:"center", padding:"11px 14px", gap:10, background:"#F3FAFE", position:"relative", touchAction:"pan-y", userSelect:"none", transition:"background .15s", cursor:"pointer", willChange:"transform" }}
+          onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd}
+          onMouseDown={onStart} onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
+          onClick={(e) => { if (!swipeState.current.hasMoved && !e.target.closest("button") && !e.target.closest("input")) handleCheck(e); }}
+          onContextMenu={(e) => { e.preventDefault(); onContextMenu(item.id); }}>
+
+          <button onClick={handleCheck}
+            style={{ width:28, height:28, borderRadius:"50%", border:"2px solid #7DD3FC", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, background:"transparent", fontSize:14, fontWeight:"bold", transition:"border-color .2s, transform .15s" }}
+            onMouseDown={(e) => { e.currentTarget.style.transform="scale(0.85)"; e.currentTarget.style.borderColor="#0369A1"; }}
+            onMouseUp={(e)   => { e.currentTarget.style.transform="scale(1)"; e.currentTarget.style.borderColor="#7DD3FC"; }}
+            onTouchStart={(e) => { e.currentTarget.style.transform="scale(0.85)"; e.currentTarget.style.borderColor="#0369A1"; }}
+            onTouchEnd={(e)   => { e.currentTarget.style.transform="scale(1)"; e.currentTarget.style.borderColor="#7DD3FC"; }}>
+          </button>
+
+          <span style={{ fontSize:22, width:30, textAlign:"center", flexShrink:0 }}><ItemIcon name={item.name} category={item.category} emoji={item.emoji} size={30} emojiSize={22}/></span>
+
+          <div style={{ flex:1, minWidth:0 }}>
+            <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{item.name}</span>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:3 }}>
+              {isEditingPrice ? (
+                <input autoFocus type="number" placeholder="0" value={tempPrice}
+                  onChange={(e) => setTempPrice(e.target.value)}
+                  onBlur={() => savePrice(item.id)}
+                  onKeyDown={(e) => e.key==="Enter" && savePrice(item.id)}
+                  style={{ background:"#FFFFFF", border:"1.5px solid #0369A1", borderRadius:"var(--radius-sm,10px)", color:"#0369A1", fontSize:13, width:80, padding:"2px 6px", textAlign:"right", outline:"none" }} />
+              ) : (
+                <button onClick={(e) => { e.stopPropagation(); setEditingPriceId(item.id); setTempPrice(item.price||""); }}
+                  style={{ background:"none", border:"none", color:item.price?"#0369A1":"#AAA", fontSize:12, cursor:"pointer", padding:0, textDecoration:"underline dotted" }}>
+                  {item.price ? `${sym}${Math.round(subtotal).toLocaleString()}` : "+ precio"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Inventory item ──────────────────────────────────────────────────────────
   return (
     <div ref={wrapRef} className="item-stagger" style={{ position:"relative", overflow:"hidden", borderBottom:"1px solid #EFEAE0", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemSpring .30s var(--ease-spring) both", contain:"layout style paint", willChange:"transform" }}>
       <div className="sl-bg-left"  style={{ position:"absolute", inset:0, background:"#FBDADA", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-end",  paddingRight:22, fontSize:14, fontWeight:700, color:"#EF4444", gap:8, transition:"opacity .12s ease" }}>🗑 Eliminar</div>
@@ -1206,7 +1441,7 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
 
         <div style={{ display:"flex", alignItems:"center", gap:2, flexShrink:0 }}>
           {qty===1 ? (
-            <button onClick={(e) => { e.stopPropagation(); Sounds.deleteItem(); onDelete(item.id); }}
+            <button onClick={(e) => { e.stopPropagation(); Sounds.deleteItem(); onDelete(item.id, stage); }}
               style={{ background:"#FCE5E5", border:"none", color:"#EF4444", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>🗑</button>
           ) : (
             <button onClick={(e) => { e.stopPropagation(); Sounds.qtyChange(); onQtyMinus(item.id); }}
@@ -1229,7 +1464,7 @@ const LIST_SUGGESTIONS = ["🏠 Casa","🛒 Semana","🎉 Fiesta","💪 Gym","�
 // ── ListCard — memoized so it only re-renders when its own list changes ───────
 const ListCard = memo(function ListCard({ list, idx, card, theme, sym, onOpenList, onDeleteList }) {
   const { done, total, cost, pct } = useMemo(() => {
-    const done  = list.items.filter(i => i.checked).length;
+    const done  = list.items.filter(isInCart).length;
     const total = list.items.length;
     const cost  = totalCost(list.items);
     const pct   = total > 0 ? (done / total) * 100 : 0;
@@ -1298,7 +1533,7 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
     setNewName("");
   };
 
-  const card = {
+  const card = useMemo(() => ({
     background: theme.isDark
       ? "rgba(30,41,59,0.92)"
       : "rgba(255,255,255,0.94)",
@@ -1309,7 +1544,7 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
     boxShadow: theme.isDark
       ? "0 4px 20px rgba(0,0,0,0.35)"
       : `0 3px 16px rgba(0,0,0,0.06)`,
-  };
+  }), [theme]);
 
   return (
     <>
@@ -1421,7 +1656,7 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
               {lists.length === 0 ? "¡Hola! 👋" : `${lists.length} lista${lists.length!==1?"s":""}`}
               {lists.length > 0 && (() => {
                 const totalItems = lists.reduce((s,l)=>s+l.items.length,0);
-                const checked    = lists.reduce((s,l)=>s+l.items.filter(i=>i.checked).length,0);
+                const checked    = lists.reduce((s,l)=>s+l.items.filter(isInCart).length,0);
                 return totalItems > 0
                   ? <span style={{ fontWeight:500, fontSize:11.5, marginLeft:7, opacity:0.62 }}>· {totalItems} art{checked>0?` · ${checked} ✓`:""}</span>
                   : null;
@@ -1471,7 +1706,7 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
         }} />
       </div>
 
-      <div style={{ flex:1, overflowY:"auto", padding:"16px 0 8px" }}>
+      <div style={{ flex:1, minHeight:0, overflowY:"auto", padding:"16px 0 8px" }}>
 
         {/* ── Existing lists ── */}
         {lists.map((list, idx) => (
@@ -1526,13 +1761,14 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
 function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budget, onOpenProfile, onSaveBudget, onCloseSession, theme = {} }) {
   const Sth = useMemo(() => makeStyles(theme), [theme]);
   const [searchQuery,    setSearchQuery]   = useState("");
-  const [showCompleted,  setShowCompleted] = useState(true);
+  const [showCart,       setShowCart]      = useState(true);
   const [editingPriceId, setEditingPriceId] = useState(null);
   const [tempPrice,      setTempPrice]     = useState("");
   const [contextItemId,  setContextItemId] = useState(null);
   const [editingItem,    setEditingItem]   = useState(null);
   const [budgetFlipped,  setBudgetFlipped]  = useState(false);
-  const [showUnchecked,  setShowUnchecked]  = useState(true);
+  const [showShopping,   setShowShopping]   = useState(true);
+  const [showInventory,  setShowInventory]  = useState(true);
   const [editingBudget,  setEditingBudget]  = useState(false);
   const [budgetDraft,    setBudgetDraft]    = useState(budget || "");
   const holdTimerRef = useRef(null);
@@ -1541,22 +1777,36 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
   const savePrice = useCallback((id) => { onUpdateItem(id, it => ({ ...it, price:tempPrice })); setEditingPriceId(null); }, [onUpdateItem, tempPrice]);
 
   // Stable callbacks — defined once so memo(SwipeItem) can bail out on unchanged items
-  const handleToggle   = useCallback((id) => onUpdateItem(id, it => ({ ...it, checked:!it.checked })), [onUpdateItem]);
+  // Tap advances an item one stage forward: inventory → shopping → cart.
+  // From the cart, tapping again sends it back one stage (to shopping) — toggle behavior only at that final stage.
+  const handleToggle = useCallback((id) => onUpdateItem(id, it => {
+    const stage = stageOf(it);
+    if (stage === "inventory") return { ...it, stage:"shopping" };
+    if (stage === "shopping")  return { ...it, stage:"cart" };
+    return { ...it, stage:"shopping" }; // cart → shopping
+  }), [onUpdateItem]);
+  // Swipe-left "remove": from inventory it's a real delete; from shopping/cart it demotes back to inventory.
+  const handleSwipeRemove = useCallback((id, stage) => {
+    if (stage === "inventory") onDeleteItem(id);
+    else onUpdateItem(id, it => ({ ...it, stage:"inventory" }));
+  }, [onDeleteItem, onUpdateItem]);
   const handleQtyMinus = useCallback((id) => onUpdateItem(id, it => ({ ...it, qty:Math.max(1,(it.qty||1)-1) })), [onUpdateItem]);
   const handleQtyPlus  = useCallback((id) => onUpdateItem(id, it => ({ ...it, qty:(it.qty||1)+1 })), [onUpdateItem]);
 
-  const { all, unchecked, checked, done, tot, inBagCost, remaining, overBudget, budgetPct } = useMemo(() => {
+  const { all, inventory, shopping, cart, done, tot, inBagCost, shoppingCost, remaining, overBudget, budgetPct } = useMemo(() => {
     const all       = searchQuery ? list.items.filter(i => normalizeSearch(i.name).includes(normalizeSearch(searchQuery))) : list.items;
-    const unchecked = all.filter(i => !i.checked);
-    const checked   = all.filter(i =>  i.checked);
-    const done      = list.items.filter(i => i.checked).length;
+    const inventory = all.filter(i => stageOf(i) === "inventory");
+    const shopping  = all.filter(i => stageOf(i) === "shopping");
+    const cart      = all.filter(i => stageOf(i) === "cart");
+    const done      = list.items.filter(i => stageOf(i) === "cart").length;
     const tot       = list.items.length;
-    // "libre" = presupuesto menos SOLO lo que ya está en la bolsa (checked)
-    const inBagCost  = totalCost(list.items.filter(i => i.checked));
+    // "libre" = presupuesto menos SOLO lo que ya está en el carrito
+    const inBagCost    = totalCost(list.items.filter(i => stageOf(i) === "cart"));
+    const shoppingCost = totalCost(list.items.filter(i => stageOf(i) === "shopping"));
     const remaining  = budgetNum - inBagCost;
     const overBudget = budgetNum > 0 && remaining < 0;
     const budgetPct  = budgetNum > 0 ? (inBagCost / budgetNum) * 100 : 0;
-    return { all, unchecked, checked, done, tot, inBagCost, remaining, overBudget, budgetPct };
+    return { all, inventory, shopping, cart, done, tot, inBagCost, shoppingCost, remaining, overBudget, budgetPct };
   }, [list.items, searchQuery, budgetNum]);
 
   // 🔔 Budget alert sound — fires once when going over
@@ -1587,7 +1837,7 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
 
   return (
     <>
-      <div className="view-enter-fwd">
+      <div className="view-enter-fwd" style={{ display:"flex", flexDirection:"column", height:"100svh", overflow:"hidden" }}>
       <div style={Sth.header}>
         <button onClick={() => { Sounds.navBack(); onBack(); }} style={{ background:"none", border:"none", color:"var(--accent)", cursor:"pointer", padding:"4px 8px 4px 0", display:"flex", alignItems:"center", gap:5, borderRadius:10, transition:"opacity .15s" }} onMouseEnter={e=>e.currentTarget.style.opacity=".7"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
           <span style={{ fontSize:20, lineHeight:1, color:"var(--accent)" }}>‹</span>
@@ -1622,7 +1872,7 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
                     {budgetNum > 0 ? "presup." : "bolsa"}
                   </span>
                   <span style={{ fontSize:13, fontWeight:800, color:"var(--accentDark)" }}>
-                    {budgetNum > 0 ? `${sym}${budgetNum >= 1000 ? `${(budgetNum/1000).toFixed(0)}k` : budgetNum}` : `${sym}${Math.round(inBagCost).toLocaleString()}`}
+                    {budgetNum > 0 ? `${sym}${budgetNum >= 1000 ? formatK(budgetNum) : budgetNum}` : `${sym}${Math.round(inBagCost).toLocaleString()}`}
                   </span>
                 </div>
               </div>
@@ -1666,38 +1916,69 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
         )}
         {searchQuery && all.length===0 && <div style={{ fontSize:13, color: theme.isDark ? "#94A3B8" : "#9E9285", padding:20, textAlign:"center" }}>Sin resultados para "{searchQuery}"</div>}
 
-        {unchecked.length > 0 && (
+        {/* ── Inventario: header colapsable ── */}
+        {inventory.length > 0 && (
           <div style={{ display:"flex", alignItems:"center", padding:"8px 16px 6px", borderBottom: theme.isDark ? "1px solid #1E293B" : "1px solid #F0F2EF" }}>
-            <button onClick={() => setShowUnchecked(v => !v)}
+            <button onClick={() => setShowInventory(v => !v)}
               style={{ background:"none", border:"none", color: theme.isDark ? "#94A3B8" : "#7A6E5F", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:6, padding:0, fontWeight:700 }}>
-              <span style={{ fontSize:11, transition:"transform .2s", display:"inline-block", transform: showUnchecked ? "rotate(0deg)" : "rotate(-90deg)" }}>▼</span>
-              <span>En lista</span>
-              <span style={{ background: theme.isDark ? "rgba(30,41,59,0.8)" : "#EDE8DF", borderRadius:10, padding:"1px 8px", fontSize:11, color: theme.isDark ? "#94A3B8" : "#8A8075", fontWeight:600 }}>{unchecked.length}</span>
+              <span style={{ fontSize:11, transition:"transform .2s", display:"inline-block", transform: showInventory ? "rotate(0deg)" : "rotate(-90deg)" }}>▼</span>
+              <span>Inventario</span>
+              <span style={{ background: theme.isDark ? "rgba(30,41,59,0.8)" : "#EDE8DF", borderRadius:10, padding:"1px 8px", fontSize:11, color: theme.isDark ? "#94A3B8" : "#8A8075", fontWeight:600 }}>{inventory.length}</span>
             </button>
           </div>
         )}
 
-        {showUnchecked && unchecked.map(item => (
+        {showInventory && inventory.map(item => (
           <SwipeItem key={item.id} item={item}
             onToggle={handleToggle}
             onQtyMinus={handleQtyMinus}
             onQtyPlus={handleQtyPlus}
-            onDelete={onDeleteItem} onContextMenu={setContextItemId}
+            onDelete={handleSwipeRemove} onContextMenu={setContextItemId}
             editingPriceId={editingPriceId} tempPrice={tempPrice}
             setTempPrice={setTempPrice} setEditingPriceId={setEditingPriceId} savePrice={savePrice}
             sym={sym} />
         ))}
 
-        {/* ── En la bolsa: header colapsable ── */}
-        {checked.length>0 && (
+        {/* ── Lista de Compras: header colapsable, con subtotal propio ── */}
+        {shopping.length>0 && (
+          <div style={{ display:"flex", alignItems:"center", padding:"9px 12px 9px 16px", borderTop:"1px solid #DCEFF9", background:"#EAF5FB", gap:8 }}>
+            <button onClick={() => setShowShopping(v => !v)}
+              style={{ background:"none", border:"none", color:"#0369A1", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:5, padding:0, fontWeight:700, flex:1, minWidth:0 }}>
+              <span style={{ fontSize:10, transition:"transform .2s", display:"inline-block", transform: showShopping ? "rotate(0deg)" : "rotate(-90deg)", opacity:.7 }}>▼</span>
+              <span style={{ fontSize:15, lineHeight:1 }}>📝</span>
+              <span style={{ fontSize:13, color:"#2C2318", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                {shopping.length === 1 ? "1 en lista de compras" : `${shopping.length} en lista de compras`}
+              </span>
+              {shoppingCost > 0 && (
+                <span style={{ fontSize:12, color:"#0369A1", fontWeight:800, background:"#FFFFFF", borderRadius:"var(--radius-sm,10px)", padding:"1px 7px", marginLeft:2, flexShrink:0 }}>
+                  {sym}{Math.round(shoppingCost).toLocaleString()}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+
+        {showShopping && shopping.map(item => (
+          <SwipeItem key={item.id} item={item}
+            onToggle={handleToggle}
+            onQtyMinus={handleQtyMinus}
+            onQtyPlus={handleQtyPlus}
+            onDelete={handleSwipeRemove} onContextMenu={setContextItemId}
+            editingPriceId={editingPriceId} tempPrice={tempPrice}
+            setTempPrice={setTempPrice} setEditingPriceId={setEditingPriceId} savePrice={savePrice}
+            sym={sym} />
+        ))}
+
+        {/* ── En el Carrito de Compras: header colapsable, con subtotal propio ── */}
+        {cart.length>0 && (
           <div style={{ display:"flex", alignItems:"center", padding:"9px 12px 9px 16px", borderTop:"1px solid #DCF4DE", background:"#ECF6ED", gap:8 }}>
             {/* Collapse toggle + label */}
-            <button onClick={() => setShowCompleted(v => !v)}
+            <button onClick={() => setShowCart(v => !v)}
               style={{ background:"none", border:"none", color:"var(--accentDark)", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:5, padding:0, fontWeight:700, flex:1, minWidth:0 }}>
-              <span style={{ fontSize:10, transition:"transform .2s", display:"inline-block", transform: showCompleted ? "rotate(0deg)" : "rotate(-90deg)", opacity:.7 }}>▼</span>
+              <span style={{ fontSize:10, transition:"transform .2s", display:"inline-block", transform: showCart ? "rotate(0deg)" : "rotate(-90deg)", opacity:.7 }}>▼</span>
               <span style={{ fontSize:15, lineHeight:1 }}>🛍</span>
               <span style={{ fontSize:13, color:"#2C2318", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                {checked.length === 1 ? "1 en tu bolsa" : `${checked.length} en tu bolsa`}
+                {cart.length === 1 ? "1 en el carrito" : `${cart.length} en el carrito`}
               </span>
               {inBagCost > 0 && (
                 <span style={{ fontSize:12, color:"var(--accentDark)", fontWeight:800, background:"var(--soft)", borderRadius:"var(--radius-sm,10px)", padding:"1px 7px", marginLeft:2, flexShrink:0 }}>
@@ -1708,7 +1989,7 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
 
             {/* ── Chip "Cerrar compra" ── */}
             <button
-              onClick={(e) => { Sounds.checkout(); const colors=["#22C55E","#4ADE80","#FCD34D","#60A5FA","#F472B6","#A78BFA"]; celebrateCheckout(colors); ripple(e); onCloseSession({ total: inBagCost, items: list.items.filter(i=>i.checked), listName: list.name, date: Date.now(), itemCount: done }); }}
+              onClick={(e) => { Sounds.checkout(); const colors=["#22C55E","#4ADE80","#FCD34D","#60A5FA","#F472B6","#A78BFA"]; celebrateCheckout(colors); ripple(e); onCloseSession({ total: inBagCost, items: list.items.filter(isInCart), listName: list.name, date: Date.now(), itemCount: done }); }}
               style={{
                 display:"flex", alignItems:"center", gap:5,
                 background:"linear-gradient(135deg,#22C55E 0%,#15803D 100%)",
@@ -1732,12 +2013,12 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
           </div>
         )}
 
-        {showCompleted && checked.map(item => (
+        {showCart && cart.map(item => (
           <SwipeItem key={item.id} item={item}
             onToggle={handleToggle}
             onQtyMinus={handleQtyMinus}
             onQtyPlus={handleQtyPlus}
-            onDelete={onDeleteItem} onContextMenu={setContextItemId}
+            onDelete={handleSwipeRemove} onContextMenu={setContextItemId}
             editingPriceId={editingPriceId} tempPrice={tempPrice}
             setTempPrice={setTempPrice} setEditingPriceId={setEditingPriceId} savePrice={savePrice}
             sym={sym} />
@@ -1799,6 +2080,7 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
   const [category,     setCategory]    = useState("Todos");
   const [customEmoji,  setCustomEmoji] = useState("🛒");
   const [customName,   setCustomName]  = useState("");
+  const [emojiAutoPicked, setEmojiAutoPicked] = useState(false); // true = current emoji came from auto-guess, not a manual tap
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const addedNames = useMemo(() => new Set(list.items.map(it => it.name)), [list.items]);
@@ -1808,13 +2090,33 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
     return inCat && inSearch && !addedNames.has(p.name);
   }), [category, search, addedNames]);
 
-  const addPreset = (p, e) => { Sounds.addItem(); if(e){ const r=e.currentTarget.getBoundingClientRect(); spawnEmojiParticle(r.left+r.width/2, r.top, p.emoji); ripple(e,"color-mix(in srgb, var(--accent) 18%, white)"); } onAddItem({ id:genId(), name:p.name, emoji:p.emoji, category:p.category, checked:false, price:String(CR_PRICES[p.name]||""), qty:1, unit:"pza", note:"" }); };
+  const addPreset = (p, e) => { Sounds.addItem(); if(e){ const r=e.currentTarget.getBoundingClientRect(); spawnEmojiParticle(r.left+r.width/2, r.top, p.emoji); ripple(e,"color-mix(in srgb, var(--accent) 18%, white)"); } onAddItem({ id:genId(), name:p.name, emoji:p.emoji, category:p.category, stage:"inventory", checked:false, price:String(CR_PRICES[p.name]||""), qty:1, unit:"pza", note:"" }); };
+
+  // Auto-select an icon as the user types, unless they've manually chosen one from the palette
+  const handleCustomNameChange = (val) => {
+    setCustomName(val);
+    if (!emojiAutoPicked) {
+      const guess = guessEmojiForName(val);
+      setCustomEmoji(guess || "🛒");
+    } else if (!val.trim()) {
+      // Cleared the field — release the manual pin so auto-guessing resumes next time
+      setEmojiAutoPicked(false);
+      setCustomEmoji("🛒");
+    }
+  };
+
+  const handleManualEmojiPick = (em) => {
+    setCustomEmoji(em);
+    setEmojiAutoPicked(true);
+    setShowEmojiPicker(false);
+  };
+
   const addCustom = (e) => {
     if (!customName.trim()) return;
     Sounds.addItem();
     if(e){ const r=e.currentTarget.getBoundingClientRect(); spawnEmojiParticle(r.left+r.width/2, r.top, customEmoji); ripple(e,"rgba(255,255,255,0.3)"); }
-    onAddItem({ id:genId(), name:customName.trim(), emoji:customEmoji, category:"Otros", checked:false, price:"", qty:1, unit:"pza", note:"" });
-    setCustomName(""); setCustomEmoji("🛒"); setShowEmojiPicker(false);
+    onAddItem({ id:genId(), name:customName.trim(), emoji:customEmoji, category:"Otros", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" });
+    setCustomName(""); setCustomEmoji("🛒"); setEmojiAutoPicked(false); setShowEmojiPicker(false);
   };
 
   return (
@@ -1841,7 +2143,7 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
             style={{ width:52, height:52, background: showEmojiPicker ? "var(--accent)" : "#EDE8DF", border: showEmojiPicker ? "2px solid var(--accentDark)" : "2px solid transparent", borderRadius:16, fontSize:26, cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", transition:"all .15s", boxShadow: showEmojiPicker ? "0 2px 12px rgba(var(--accent-rgb,34,197,94),0.28)" : "none" }}>
             {customEmoji}
           </button>
-          <input value={customName} onChange={e => setCustomName(e.target.value)} onKeyDown={e => e.key==="Enter" && addCustom()}
+          <input value={customName} onChange={e => handleCustomNameChange(e.target.value)} onKeyDown={e => e.key==="Enter" && addCustom()}
             placeholder="Nombre del artículo..."
             style={{ flex:1, background:"#FEFCF9", border:"1.5px solid var(--border)", borderRadius:"var(--radius-md,16px)", padding:"13px 14px", color:"#1A2118", fontSize:15, fontWeight:600, outline:"none", transition:"border-color .15s, box-shadow .15s", fontFamily:"inherit" }}
             onFocus={e => { e.target.style.borderColor="var(--accent)"; e.target.style.boxShadow="0 0 0 3px var(--soft)"; }}
@@ -1858,7 +2160,7 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
             <div style={{ fontSize:10, color:"#B0A898", fontWeight:700, letterSpacing:".06em", textTransform:"uppercase", marginBottom:8, paddingLeft:2 }}>Elige un ícono</div>
             <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
               {EMOJI_PALETTE.map(em => (
-                <button key={em} onClick={() => { setCustomEmoji(em); setShowEmojiPicker(false); }}
+                <button key={em} onClick={() => handleManualEmojiPick(em)}
                   style={{ width:40, height:40, background: em===customEmoji ? "var(--accent)" : "rgba(0,0,0,0.04)", border: em===customEmoji ? "2px solid var(--accentDark)" : "2px solid transparent", borderRadius:10, fontSize:20, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"transform .1s, background .1s", flexShrink:0 }}
                   onTouchStart={e => e.currentTarget.style.transform="scale(1.2)"}
                   onTouchEnd={e   => e.currentTarget.style.transform="scale(1)"}
@@ -1946,8 +2248,11 @@ const LS = { get:(k,d) => { try { const s=localStorage.getItem(k); return s?JSON
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Helpers locales ───────────────────────────────────────────────────────────
+// Guards against historical sessions where .total is missing, undefined, or a
+// string — without this, reduce/map over s.total can silently produce NaN.
+const safeTotal = (s) => parseFloat(s?.total) || 0;
 const fmtAmt = (n, sym) =>
-  n >= 10000 ? `${sym}${(n / 1000).toFixed(0)}k` : `${sym}${Math.round(n).toLocaleString()}`;
+  n >= 1000 ? `${sym}${formatK(n)}` : `${sym}${Math.round(n).toLocaleString()}`;
 const fmtDate = (d) =>
   new Date(d).toLocaleDateString("es-CR", { day: "numeric", month: "short" });
 const fmtShortDate = (d) =>
@@ -1988,16 +2293,16 @@ function DonutChart({ slices, size = 120, stroke = 22 }) {
 // ── BarChart proporcional con fechas ──────────────────────────────────────────
 function BarChart({ sessions, sym, maxBars = 10 }) {
   const bars = sessions.slice(-maxBars);
-  const maxVal = Math.max(...bars.map((s) => s.total), 1);
+  const maxVal = Math.max(...bars.map((s) => safeTotal(s)), 1);
   return (
     <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 80, paddingBottom: 20, position: "relative" }}>
       {bars.map((s, i) => {
-        const pct = (s.total / maxVal) * 100;
+        const pct = (safeTotal(s) / maxVal) * 100;
         const isLast = i === bars.length - 1;
         return (
           <div key={s.date + i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative" }}>
             <div
-              title={`${fmtShortDate(s.date)}: ${fmtAmt(s.total, sym)}`}
+              title={`${fmtShortDate(s.date)}: ${fmtAmt(safeTotal(s), sym)}`}
               style={{
                 width: "100%",
                 height: `${pct}%`,
@@ -2031,9 +2336,12 @@ function BarChart({ sessions, sym, maxBars = 10 }) {
 // ── Insight automático ────────────────────────────────────────────────────────
 function genInsight({ sessions, budgetNum, sym, period }) {
   if (!sessions.length) return null;
-  const totals = sessions.map((s) => s.total);
+  const totals = sessions.map((s) => safeTotal(s));
   const avg = totals.reduce((a, b) => a + b, 0) / totals.length;
   const last = totals[totals.length - 1];
+  // Net change across the last 3 sessions. The reducer telescopes:
+  // i=1: 0 + (b1-b0) = b1-b0 ; i=2: (b1-b0) + (b2-b1) = b2-b0
+  // → result is simply last3[2] - last3[0]. Verified correct, not a bug.
   const trend = totals.length >= 3
     ? totals.slice(-3).reduce((a, b, i, arr) => i === 0 ? 0 : a + (b - arr[i - 1]), 0)
     : 0;
@@ -2052,9 +2360,12 @@ function genInsight({ sessions, budgetNum, sym, period }) {
     : 0;
   const freq_per_week = daySpread > 0 ? (sessions.length / (daySpread / 7)).toFixed(1) : null;
 
-  if (budgetNum > 0) {
+  if (budgetNum > 0 && sessions.length > 0) {
     const total = totals.reduce((a, b) => a + b, 0);
-    const cap = budgetNum * 4.33;
+    // budgetNum is a per-session (per shopping trip) budget, not a weekly amount —
+    // so the cap for this period is "what you'd have spent if every trip you actually
+    // took stayed within budget", i.e. budget × number of sessions in the period.
+    const cap = budgetNum * sessions.length;
     if (total > cap * 0.9)
       return { icon: "🔥", text: `Cerca del tope: llevás ${fmtAmt(total, sym)} de ${fmtAmt(cap, sym)} en el período.`, color: "#f87171" };
   }
@@ -2087,7 +2398,7 @@ function WeekComparison({ history, sym }) {
   const weekTotal = (from, to) =>
     history
       .filter((s) => { const d = new Date(s.date); return d >= from && d < to; })
-      .reduce((a, s) => a + s.total, 0);
+      .reduce((a, s) => a + safeTotal(s), 0);
 
   const thisW = weekTotal(w0start, new Date(w0start.getTime() + 7 * 86400000));
   const lastW = weekTotal(w1start, w0start);
@@ -2126,7 +2437,7 @@ function WeekComparison({ history, sym }) {
       </div>
       {delta !== null && (
         <div style={{ fontSize: 11, color: parseFloat(delta) > 0 ? "#EF4444" : "var(--accent)", fontWeight: 700, textAlign: "center" }}>
-          {parseFloat(delta) > 0 ? `▲ ${delta}% vs sem. pasada` : `▼ ${Math.abs(delta)}% vs sem. pasada`}
+          {parseFloat(delta) > 0 ? `▲ ${delta}% vs sem. pasada` : `▼ ${Math.abs(parseFloat(delta))}% vs sem. pasada`}
         </div>
       )}
     </div>
@@ -2221,7 +2532,7 @@ function StatsView({ history, budget, sym }) {
   }, [history, period]);
 
   // ── Derived metrics ──
-  const total = useMemo(() => sessions.reduce((a, s) => a + s.total, 0), [sessions]);
+  const total = useMemo(() => sessions.reduce((a, s) => a + safeTotal(s), 0), [sessions]);
   const avgTicket = sessions.length > 0 ? total / sessions.length : 0;
 
   // prev-period delta (solo para "month")
@@ -2231,7 +2542,7 @@ function StatsView({ history, budget, sym }) {
     const pmEnd = new Date(now.getFullYear(), now.getMonth(), 1);
     return history
       .filter((s) => { const d = new Date(s.date); return d >= pm && d < pmEnd; })
-      .reduce((a, s) => a + s.total, 0);
+      .reduce((a, s) => a + safeTotal(s), 0);
   }, [history, period]);
 
   const delta = prevTotal != null && prevTotal > 0
@@ -2259,8 +2570,12 @@ function StatsView({ history, budget, sym }) {
 
   const insight = useMemo(() => genInsight({ sessions, budgetNum, sym, period }), [sessions, budgetNum, sym, period]);
 
-  // Budget %
-  const budgetCap = period === "month" ? budgetNum * 4.33 : period === "q3" ? budgetNum * 13 : null;
+  // Budget % — budgetNum is a per-session (per shopping trip) budget, so the cap
+  // for a period is budget × number of trips actually taken in that period, not
+  // a weeks-in-month/quarter multiplier (that wrongly treated it as a weekly amount).
+  const budgetCap = (period === "month" || period === "q3") && sessions.length > 0
+    ? budgetNum * sessions.length
+    : null;
   const budgetPct = budgetCap && budgetCap > 0 ? Math.min((total / budgetCap) * 100, 100) : 0;
 
   // ── Empty state ──
@@ -2345,7 +2660,7 @@ function StatsView({ history, budget, sym }) {
               )}
               {delta !== null && (
                 <span style={{ fontSize: 12, fontWeight: 700, color: parseFloat(delta) > 0 ? "#EF4444" : "var(--accent)" }}>
-                  {parseFloat(delta) > 0 ? `▲ ${delta}%` : `▼ ${Math.abs(delta)}%`} vs mes ant.
+                  {parseFloat(delta) > 0 ? `▲ ${delta}%` : `▼ ${Math.abs(parseFloat(delta))}%`} vs mes ant.
                 </span>
               )}
             </div>
@@ -2503,7 +2818,7 @@ function StatsView({ history, budget, sym }) {
                     background: "color-mix(in srgb, var(--accent) 10%, var(--cardBg))", borderRadius: 8,
                     padding: "2px 8px",
                   }}>
-                    {fmtAmt(s.total, sym)}
+                    {fmtAmt(safeTotal(s), sym)}
                   </div>
                 </div>
               ))}
@@ -2701,8 +3016,8 @@ body {
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   color: var(--textPrimary);
-  min-height: 100svh;
-  overflow-x: hidden;
+  height: 100%;
+  overflow: hidden;
   background-color: var(--bg-base);
   background-image: var(--bg-wallpaper);
   background-size: cover;
@@ -3437,8 +3752,10 @@ export default function SuperLista() {
 
   const closeSession = useCallback((session) => {
     setHistory(prev => [...prev, session]);
+    // "Cerrar compra" empties the cart: only items that were in the cart return to Inventario.
+    // Items still sitting in Lista de Compras (never added to the cart) are left untouched.
     setLists(prev => prev.map(l => l.id===activeListId
-      ? { ...l, items: l.items.map(it => ({ ...it, checked: false })) }
+      ? { ...l, items: l.items.map(it => isInCart(it) ? { ...it, stage:"inventory", checked:false } : it) }
       : l
     ));
   }, [activeListId]);
@@ -3516,34 +3833,34 @@ export default function SuperLista() {
         {themeName === "green" ? "🌸" : themeName === "pink" ? "🌙" : "🌿"}
       </button>
       <div style={Sd.app}>
-        {view==="lists" && (
-          <div key="lists" className="view-enter-back">
-          <ListsView lists={lists} sym={sym} history={history} budget={profile.budget} themeName={themeName} theme={theme}
-            onOpenList={handleOpenList}
-            onDeleteList={handleDeleteList}
-            onCreateList={handleCreateList} />
-          </div>
-        )}
-        {view==="stats" && (
-          <div key="stats" className="view-enter-fwd" style={{ flex:1, overflowY:"auto", paddingBottom:80 }}>
-            {/* Stats page header */}
-            <div style={{
-              display:"flex", alignItems:"center", gap:12,
-              padding:"16px 16px 12px",
-              background:"var(--headerBg)", borderBottom:"1px solid var(--cardBorder)",
-              boxShadow:"0 2px 16px rgba(0,0,0,0.05)",
-              position:"sticky", top:0, zIndex:10,
-            }}>
-              <div style={{ width:40, height:40, borderRadius:14, background:"var(--soft)", border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <span style={{ fontSize:22, lineHeight:1 }}>📊</span>
-              </div>
-              <div>
-                <div style={{ fontSize:17, fontWeight:800, color:"var(--textPrimary)", letterSpacing:"-0.01em" }}>Estadísticas</div>
-                <div style={{ fontSize:12, color:"var(--textMuted)", marginTop:1 }}>Tus hábitos de compra</div>
-              </div>
+        {(view==="lists" || view==="stats") && (
+          <SwipeTabContainer tab={view} onTabChange={(t) => { setNavActive(t==="stats" ? "stats" : "home"); setView(t); }}>
+            <div style={{ width:`${TAB_W}%`, height:"100%", flexShrink:0, minHeight:0, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+              <ListsView lists={lists} sym={sym} history={history} budget={profile.budget} themeName={themeName} theme={theme}
+                onOpenList={handleOpenList}
+                onDeleteList={handleDeleteList}
+                onCreateList={handleCreateList} />
             </div>
-            <StatsView history={history} budget={profile.budget} sym={sym} />
-          </div>
+            <div style={{ width:`${TAB_W}%`, height:"100%", flexShrink:0, minHeight:0, overflowY:"auto", paddingBottom:80 }}>
+              {/* Stats page header */}
+              <div style={{
+                display:"flex", alignItems:"center", gap:12,
+                padding:"16px 16px 12px",
+                background:"var(--headerBg)", borderBottom:"1px solid var(--cardBorder)",
+                boxShadow:"0 2px 16px rgba(0,0,0,0.05)",
+                position:"sticky", top:0, zIndex:10,
+              }}>
+                <div style={{ width:40, height:40, borderRadius:14, background:"var(--soft)", border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <span style={{ fontSize:22, lineHeight:1 }}>📊</span>
+                </div>
+                <div>
+                  <div style={{ fontSize:17, fontWeight:800, color:"var(--textPrimary)", letterSpacing:"-0.01em" }}>Estadísticas</div>
+                  <div style={{ fontSize:12, color:"var(--textMuted)", marginTop:1 }}>Tus hábitos de compra</div>
+                </div>
+              </div>
+              <StatsView history={history} budget={profile.budget} sym={sym} />
+            </div>
+          </SwipeTabContainer>
         )}
         {view==="list" && activeList && (
           <div key="list">

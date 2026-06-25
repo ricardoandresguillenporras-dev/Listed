@@ -2136,19 +2136,43 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
     <>
       <div className="view-enter-fwd" style={{ display:"flex", flexDirection:"column", height:"100svh", overflow:"hidden" }}>
       {/* ── Header ── */}
-      <div style={Sth.header}>
+      <div style={{
+        ...Sth.header,
+        background: theme.isDark
+          ? "rgba(15,23,42,0.72)"
+          : "rgba(255,255,255,0.62)",
+        backdropFilter: "blur(18px) saturate(1.6)",
+        WebkitBackdropFilter: "blur(18px) saturate(1.6)",
+        borderBottom: theme.isDark
+          ? "1px solid rgba(255,255,255,0.08)"
+          : "1px solid rgba(255,255,255,0.72)",
+        boxShadow: theme.isDark
+          ? "0 2px 20px rgba(0,0,0,0.30)"
+          : "0 2px 20px rgba(80,60,20,0.08)",
+      }}>
         <button onClick={() => { Sounds.navBack(); onBack(); }} style={{ background:"none", border:"none", color:"var(--accent)", cursor:"pointer", padding:"4px 8px 4px 0", display:"flex", alignItems:"center", borderRadius:10, transition:"opacity .15s" }} onMouseEnter={e=>e.currentTarget.style.opacity=".7"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
           <span style={{ fontSize:20, lineHeight:1, color:"var(--accent)" }}>‹</span>
         </button>
         <span style={{ flex:1, fontWeight:800, fontSize:18, color: theme.isDark ? "#E2E8F0" : "#1A2118" }}>Agregar artículos</span>
         <button onClick={() => { Sounds.save(); onBack(); }}
-          style={{ background:"linear-gradient(135deg,var(--accent),var(--accentDark))", border:"none", borderRadius:20, padding:"7px 16px", color:"#fff", fontSize:13, fontWeight:800, cursor:"pointer", boxShadow:"0 2px 8px rgba(22,163,74,0.28)" }}>
+          style={{ background:"linear-gradient(135deg,var(--accent),var(--accentDark))", border:"none", borderRadius:20, padding:"7px 16px", color:"#fff", fontSize:13, fontWeight:800, cursor:"pointer", boxShadow:"0 2px 8px rgba(var(--accent-rgb,22,163,74),0.32)" }}>
           Listo ✓
         </button>
       </div>
 
       {/* ── Custom item row ── */}
-      <div style={{ flexShrink:0, padding:"14px 16px 12px", borderBottom:"1px solid #EBE8E2", background:"#FBF9F5", }}>
+      <div style={{
+        flexShrink:0,
+        padding:"14px 16px 14px",
+        borderBottom: theme.isDark
+          ? "1px solid rgba(255,255,255,0.07)"
+          : "1px solid rgba(255,255,255,0.60)",
+        background: theme.isDark
+          ? "rgba(15,23,42,0.60)"
+          : "rgba(255,255,255,0.52)",
+        backdropFilter: "blur(14px) saturate(1.5)",
+        WebkitBackdropFilter: "blur(14px) saturate(1.5)",
+      }}>
         <div style={{ fontSize:11, fontWeight:700, color:"#9E9285", letterSpacing:".06em", textTransform:"uppercase", marginBottom:10 }}>Artículo personalizado</div>
         <div style={{ display:"flex", gap:10, alignItems:"center" }}>
           {/* Big emoji button */}
@@ -2240,15 +2264,47 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
       </div>
 
       {/* ── Search ── */}
-      <div style={{ flexShrink:0, padding:"10px 16px 6px" }}>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Buscar artículo..."
-          style={{ width:"100%", background: theme.isDark ? "rgba(30,41,59,0.7)" : "rgba(255,255,255,0.80)", border:`1.5px solid ${theme.isDark ? "rgba(99,102,241,0.20)" : theme.border}`, borderRadius:"var(--radius-md,16px)", padding:"11px 16px", color: theme.isDark ? "#E2E8F0" : "#1A2118", fontSize:14, fontWeight:500, outline:"none", boxSizing:"border-box", transition:"border-color .15s, box-shadow .15s" }}
-          onFocus={e => { e.target.style.borderColor="var(--accent)"; e.target.style.boxShadow=`0 0 0 3px ${theme.tagBg}`; }}
-          onBlur={e  => { e.target.style.borderColor=theme.isDark ? "rgba(99,102,241,0.20)" : theme.border; e.target.style.boxShadow="none"; }} />
+      <div style={{
+        flexShrink:0,
+        padding:"10px 16px 6px",
+        background: theme.isDark
+          ? "rgba(15,23,42,0.45)"
+          : "rgba(255,255,255,0.30)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+      }}>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍  Buscar artículo..."
+          style={{
+            width:"100%",
+            background: theme.isDark ? "rgba(15,23,42,0.70)" : "rgba(255,255,255,0.82)",
+            border: `1.5px solid ${theme.isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.90)"}`,
+            borderRadius:99,
+            padding:"11px 18px",
+            color: theme.isDark ? "#E2E8F0" : "#1A2118",
+            fontSize:14, fontWeight:500, outline:"none", boxSizing:"border-box",
+            transition:"border-color .15s, box-shadow .15s",
+            boxShadow: theme.isDark
+              ? "0 2px 12px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)"
+              : "0 2px 12px rgba(80,60,20,0.08), inset 0 1px 0 rgba(255,255,255,0.90)",
+          }}
+          onFocus={e => { e.target.style.borderColor="var(--accent)"; e.target.style.boxShadow=`0 0 0 3px rgba(var(--accent-rgb),0.18), 0 2px 12px rgba(80,60,20,0.08)`; }}
+          onBlur={e  => { e.target.style.borderColor=theme.isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.90)"; e.target.style.boxShadow=theme.isDark ? "0 2px 12px rgba(0,0,0,0.25)" : "0 2px 12px rgba(80,60,20,0.08)"; }} />
       </div>
 
       {/* ── Category chips ── */}
-      <div style={{ flexShrink:0, display:"flex", overflowX:"auto", gap:7, padding:"6px 16px 10px", scrollbarWidth:"none" }}>
+      <div style={{
+        flexShrink:0, display:"flex", overflowX:"auto", gap:7,
+        padding:"6px 16px 10px",
+        scrollbarWidth:"none",
+        background: theme.isDark
+          ? "rgba(15,23,42,0.40)"
+          : "rgba(255,255,255,0.26)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
+        borderBottom: theme.isDark
+          ? "1px solid rgba(255,255,255,0.05)"
+          : "1px solid rgba(255,255,255,0.55)",
+      }}>
         {["Todos",...CATEGORIES].map(cat => {
           const catEmoji = CAT_ICONS[cat];
           return (
@@ -2269,9 +2325,22 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
       </div>
 
       {/* ── Preset items list ── */}
-      <div style={{ flex:1, minHeight:0, overflowY:"auto", paddingBottom:24 }}>
+      <div style={{
+        flex:1, minHeight:0, overflowY:"auto", paddingBottom:24,
+        padding:"10px 12px 24px",
+        display:"flex", flexDirection:"column", gap:6,
+        background: "transparent",
+      }}>
         {filtered.length===0 ? (
-          <div style={{ fontSize:14, color:"#B0A898", padding:"32px 20px", textAlign:"center" }}>
+          <div style={{
+            fontSize:14, color: theme.isDark ? "#6279C8" : "#B0A898",
+            padding:"32px 20px", textAlign:"center",
+            background: theme.isDark ? "rgba(15,23,42,0.55)" : "rgba(255,255,255,0.52)",
+            backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)",
+            borderRadius:20,
+            border: theme.isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(255,255,255,0.75)",
+            marginTop:8,
+          }}>
             <div style={{ fontSize:36, marginBottom:10 }}>🔍</div>
             No hay más artículos aquí
           </div>
@@ -2287,11 +2356,29 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
                 role="button" tabIndex={0}
                 onClick={(e) => { if (!e.target.closest("button") && !e.target.closest("input")) addPreset(p,e); }}
                 onKeyDown={(e) => { if (e.key==="Enter") addPreset(p,e); }}
-                style={{ width:"100%", display:"flex", alignItems:"center", gap:14, padding:"12px 16px", background: theme.isDark ? "rgba(30,41,59,0.55)" : "#FCE9EE", border:"none", borderBottom:`1px solid ${theme.isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`, cursor:"pointer", color: theme.isDark ? "#E2E8F0" : "#1A2118", textAlign:"left", transition:"background .12s ease" }}
-                onMouseEnter={e => e.currentTarget.style.background=theme.isDark ? "color-mix(in srgb, #6366F1 12%, var(--cardBg))" : theme.tagBg}
-                onMouseLeave={e => e.currentTarget.style.background=theme.isDark ? "rgba(30,41,59,0.55)" : "#FCE9EE"}
-                onTouchStart={e => e.currentTarget.style.background=theme.isDark ? "color-mix(in srgb, #6366F1 15%, var(--cardBg))" : theme.pillBg}
-                onTouchEnd={e   => e.currentTarget.style.background=theme.isDark ? "rgba(30,41,59,0.55)" : "#FCE9EE"}>
+                style={{
+                  width:"100%", display:"flex", alignItems:"center", gap:14,
+                  padding:"11px 14px",
+                  background: theme.isDark
+                    ? "rgba(20,30,60,0.62)"
+                    : "rgba(255,255,255,0.60)",
+                  backdropFilter: "blur(12px) saturate(1.4)",
+                  WebkitBackdropFilter: "blur(12px) saturate(1.4)",
+                  border: theme.isDark
+                    ? "1px solid rgba(255,255,255,0.08)"
+                    : "1px solid rgba(255,255,255,0.82)",
+                  borderRadius:16,
+                  boxShadow: theme.isDark
+                    ? "0 2px 10px rgba(0,0,0,0.22)"
+                    : "0 2px 10px rgba(80,60,20,0.06)",
+                  cursor:"pointer", color: theme.isDark ? "#E2E8F0" : "#1A2118",
+                  textAlign:"left",
+                  transition:"background .14s ease, transform .12s ease, box-shadow .14s ease",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background=theme.isDark ? "rgba(40,55,100,0.72)" : "rgba(255,255,255,0.82)"; e.currentTarget.style.boxShadow=theme.isDark?"0 4px 18px rgba(0,0,0,0.28)":"0 4px 18px rgba(80,60,20,0.12)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background=theme.isDark ? "rgba(20,30,60,0.62)" : "rgba(255,255,255,0.60)"; e.currentTarget.style.boxShadow=theme.isDark?"0 2px 10px rgba(0,0,0,0.22)":"0 2px 10px rgba(80,60,20,0.06)"; }}
+                onTouchStart={e => { e.currentTarget.style.background=theme.isDark ? "rgba(40,55,100,0.72)" : "rgba(255,255,255,0.82)"; e.currentTarget.style.transform="scale(0.985)"; }}
+                onTouchEnd={e => { e.currentTarget.style.background=theme.isDark ? "rgba(20,30,60,0.62)" : "rgba(255,255,255,0.60)"; e.currentTarget.style.transform="scale(1)"; }}>
                 <ItemIcon name={p.name} category={p.category} emoji={p.emoji} size={36} emojiSize={26}/>
                 <div style={{ flex:1, minWidth:0 }}>
                   <span style={{ display:"block", fontSize:14, fontWeight:700 }}>{p.name}</span>
@@ -2308,12 +2395,12 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
                 ) : (
                   <button
                     onClick={(e) => { e.stopPropagation(); setEditingPresetPrice(p.name); setTempPresetPrice(overridden !== undefined ? overridden : (crp ? String(crp) : "")); }}
-                    style={{ fontSize:12, color: theme.isDark ? "#a5b4fc" : theme.tagColor, fontWeight:800, background: theme.tagBg, border:"none", borderRadius:"var(--radius-sm,10px)", padding:"2px 9px", flexShrink:0, cursor:"pointer", fontFamily:"inherit" }}>
+                    style={{ fontSize:12, color: theme.isDark ? "#a5b4fc" : theme.tagColor, fontWeight:800, background: theme.isDark ? "rgba(99,102,241,0.18)" : "rgba(var(--accent-rgb),0.10)", border:"none", borderRadius:"var(--radius-sm,10px)", padding:"3px 9px", flexShrink:0, cursor:"pointer", fontFamily:"inherit" }}>
                     {displayPrice ? `${sym}${Math.round(displayPrice).toLocaleString()}` : "+ precio"}
                   </button>
                 )}
                 <button onClick={(e) => addPreset(p,e)}
-                  style={{ background:"linear-gradient(135deg,var(--accent),var(--accentDark))", color:"#fff", width:30, height:30, borderRadius:"var(--radius-sm,10px)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, fontWeight:900, flexShrink:0, boxShadow:`0 2px 8px ${theme.pillBorder}`, border:"none", cursor:"pointer" }}>+</button>
+                  style={{ background:"linear-gradient(135deg,var(--accent),var(--accentDark))", color:"#fff", width:30, height:30, borderRadius:"var(--radius-sm,10px)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, fontWeight:900, flexShrink:0, boxShadow:`0 2px 8px rgba(var(--accent-rgb),0.32)`, border:"none", cursor:"pointer" }}>+</button>
               </div>
             );
           })

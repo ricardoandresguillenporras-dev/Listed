@@ -2081,6 +2081,7 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
   const [customEmoji,  setCustomEmoji] = useState("🛒");
   const [customName,   setCustomName]  = useState("");
   const [customPrice,  setCustomPrice] = useState(""); // precio del artículo personalizado, antes de agregarlo
+  const [customDestination, setCustomDestination] = useState("shopping"); // "shopping" | "inventory"
   const [emojiAutoPicked, setEmojiAutoPicked] = useState(false); // true = current emoji came from auto-guess, not a manual tap
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   // Precios editados a mano por el usuario para artículos del catálogo (antes de
@@ -2102,7 +2103,7 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
     return inCat && inSearch && !addedNames.has(p.name);
   }), [category, search, addedNames]);
 
-  const addPreset = (p, e) => { Sounds.addItem(); if(e){ const r=e.currentTarget.getBoundingClientRect(); spawnEmojiParticle(r.left+r.width/2, r.top, p.emoji); ripple(e,"color-mix(in srgb, var(--accent) 18%, white)"); } const priceToUse = priceOverrides[p.name] !== undefined ? priceOverrides[p.name] : String(CR_PRICES[p.name]||""); onAddItem({ id:genId(), name:p.name, emoji:p.emoji, category:p.category, stage:"inventory", checked:false, price:priceToUse, qty:1, unit:"pza", note:"" }); };
+  const addPreset = (p, e) => { Sounds.addItem(); if(e){ const r=e.currentTarget.getBoundingClientRect(); spawnEmojiParticle(r.left+r.width/2, r.top, p.emoji); ripple(e,"color-mix(in srgb, var(--accent) 18%, white)"); } const priceToUse = priceOverrides[p.name] !== undefined ? priceOverrides[p.name] : String(CR_PRICES[p.name]||""); onAddItem({ id:genId(), name:p.name, emoji:p.emoji, category:p.category, stage: customDestination === "shopping" ? "shopping" : "inventory", checked:false, price:priceToUse, qty:1, unit:"pza", note:"" }); };
 
   // Auto-select an icon as the user types, unless they've manually chosen one from the palette
   const handleCustomNameChange = (val) => {
@@ -2127,8 +2128,8 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
     if (!customName.trim()) return;
     Sounds.addItem();
     if(e){ const r=e.currentTarget.getBoundingClientRect(); spawnEmojiParticle(r.left+r.width/2, r.top, customEmoji); ripple(e,"rgba(255,255,255,0.3)"); }
-    onAddItem({ id:genId(), name:customName.trim(), emoji:customEmoji, category:"Otros", stage:"inventory", checked:false, price:customPrice, qty:1, unit:"pza", note:"" });
-    setCustomName(""); setCustomEmoji("🛒"); setEmojiAutoPicked(false); setCustomPrice(""); setShowEmojiPicker(false);
+    onAddItem({ id:genId(), name:customName.trim(), emoji:customEmoji, category:"Otros", stage: customDestination === "shopping" ? "shopping" : "inventory", checked:false, price:customPrice, qty:1, unit:"pza", note:"" });
+    setCustomName(""); setCustomEmoji("🛒"); setEmojiAutoPicked(false); setCustomPrice(""); setCustomDestination("shopping"); setShowEmojiPicker(false);
   };
 
   return (
@@ -2175,6 +2176,47 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
             style={{ flex:1, background:"#FEFCF9", border:"1.5px solid var(--border)", borderRadius:"var(--radius-sm,10px)", padding:"9px 12px", color:"#1A2118", fontSize:14, fontWeight:600, outline:"none", transition:"border-color .15s, box-shadow .15s", fontFamily:"inherit" }}
             onFocus={e => { e.target.style.borderColor="var(--accent)"; e.target.style.boxShadow="0 0 0 3px var(--soft)"; }}
             onBlur={e  => { e.target.style.borderColor="#D8DDD6"; e.target.style.boxShadow="none"; }} />
+        </div>
+
+        {/* ── Destino del artículo: Lista de Compras o Inventario ── */}
+        <div style={{ marginTop:10, position:"relative" }}>
+          <div style={{ fontSize:10, fontWeight:700, color:"#9E9285", letterSpacing:".06em", textTransform:"uppercase", marginBottom:6 }}>Agregar a</div>
+          <div style={{ display:"flex", gap:8 }}>
+            {[
+              { value:"shopping", label:"Lista de compras", icon:"🛒" },
+              { value:"inventory", label:"Inventario", icon:"📦" },
+            ].map(opt => {
+              const isActive = customDestination === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => setCustomDestination(opt.value)}
+                  style={{
+                    flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+                    padding:"9px 10px",
+                    background: isActive
+                      ? "linear-gradient(135deg,var(--accent),var(--accentDark))"
+                      : (theme.isDark ? "rgba(30,41,59,0.50)" : "#F0EDE7"),
+                    border: isActive ? "2px solid var(--accentDark)" : "2px solid transparent",
+                    borderRadius:12,
+                    color: isActive ? "#fff" : (theme.isDark ? "#94A3B8" : "#6B5E52"),
+                    fontSize:13, fontWeight:700, cursor:"pointer",
+                    boxShadow: isActive ? "0 2px 10px rgba(var(--accent-rgb,34,197,94),0.30)" : "none",
+                    transition:"all .18s cubic-bezier(0.34,1.2,0.64,1)",
+                    fontFamily:"inherit",
+                    letterSpacing:"0.01em",
+                  }}
+                  onMouseDown={e => { e.currentTarget.style.transform="scale(0.96)"; }}
+                  onMouseUp={e   => { e.currentTarget.style.transform="scale(1)"; }}
+                  onTouchStart={e => { e.currentTarget.style.transform="scale(0.96)"; }}
+                  onTouchEnd={e   => { e.currentTarget.style.transform="scale(1)"; }}
+                >
+                  <span style={{ fontSize:15 }}>{opt.icon}</span>
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* ── Emoji palette (slides open) ── */}

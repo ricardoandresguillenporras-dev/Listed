@@ -2397,6 +2397,14 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
             const overridden = priceOverrides[p.name];
             const displayPrice = overridden !== undefined ? overridden : crp;
             const isEditingThisPrice = editingPresetPrice === p.name;
+
+            // Per-theme card tint — blends naturally with the wallpaper instead of clashing
+            const cardBg    = theme.isDark ? "rgba(22,30,70,0.64)"   : theme.accentRgb === "212,96,122" ? "rgba(255,248,251,0.68)" : "rgba(253,250,243,0.68)";
+            const cardBgHov = theme.isDark ? "rgba(34,46,98,0.76)"   : theme.accentRgb === "212,96,122" ? "rgba(255,252,254,0.85)" : "rgba(255,253,248,0.86)";
+            const cardBorder= theme.isDark ? "rgba(255,255,255,0.07)" : theme.accentRgb === "212,96,122" ? "rgba(244,179,196,0.55)" : "rgba(199,228,138,0.55)";
+            const iconBg    = theme.isDark ? "rgba(255,255,255,0.06)" : `rgba(var(--accent-rgb),0.09)`;
+            const priceBg   = theme.isDark ? "rgba(var(--accent-rgb),0.16)" : `rgba(var(--accent-rgb),0.10)`;
+
             return (
               <div key={p.name}
                 className="preset-item-btn"
@@ -2404,50 +2412,86 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
                 onClick={(e) => { if (!e.target.closest("button") && !e.target.closest("input")) addPreset(p,e); }}
                 onKeyDown={(e) => { if (e.key==="Enter") addPreset(p,e); }}
                 style={{
-                  width:"100%", display:"flex", alignItems:"center", gap:14,
-                  padding:"11px 14px",
-                  background: theme.isDark
-                    ? "rgba(20,30,60,0.62)"
-                    : "rgba(255,255,255,0.60)",
-                  backdropFilter: "blur(12px) saturate(1.4)",
-                  WebkitBackdropFilter: "blur(12px) saturate(1.4)",
-                  border: theme.isDark
-                    ? "1px solid rgba(255,255,255,0.08)"
-                    : "1px solid rgba(255,255,255,0.82)",
-                  borderRadius:16,
+                  width:"100%", display:"flex", alignItems:"center", gap:12,
+                  padding:"10px 12px 10px 10px",
+                  background: cardBg,
+                  backdropFilter: "blur(14px) saturate(1.5)",
+                  WebkitBackdropFilter: "blur(14px) saturate(1.5)",
+                  border: `1px solid ${cardBorder}`,
+                  borderRadius:18,
                   boxShadow: theme.isDark
-                    ? "0 2px 10px rgba(0,0,0,0.22)"
-                    : "0 2px 10px rgba(80,60,20,0.06)",
-                  cursor:"pointer", color: theme.isDark ? "#E2E8F0" : "#1A2118",
+                    ? "0 1px 8px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.04)"
+                    : "0 1px 6px rgba(80,60,20,0.05), inset 0 1px 0 rgba(255,255,255,0.80)",
+                  cursor:"pointer", color: theme.isDark ? "#E2E8F0" : theme.textPrimary,
                   textAlign:"left",
-                  transition:"background .14s ease, transform .12s ease, box-shadow .14s ease",
+                  transition:"background .13s ease, transform .12s cubic-bezier(0.34,1.3,0.64,1), box-shadow .13s ease",
+                  boxSizing:"border-box",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background=theme.isDark ? "rgba(40,55,100,0.72)" : "rgba(255,255,255,0.82)"; e.currentTarget.style.boxShadow=theme.isDark?"0 4px 18px rgba(0,0,0,0.28)":"0 4px 18px rgba(80,60,20,0.12)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background=theme.isDark ? "rgba(20,30,60,0.62)" : "rgba(255,255,255,0.60)"; e.currentTarget.style.boxShadow=theme.isDark?"0 2px 10px rgba(0,0,0,0.22)":"0 2px 10px rgba(80,60,20,0.06)"; }}
-                onTouchStart={e => { e.currentTarget.style.background=theme.isDark ? "rgba(40,55,100,0.72)" : "rgba(255,255,255,0.82)"; e.currentTarget.style.transform="scale(0.985)"; }}
-                onTouchEnd={e => { e.currentTarget.style.background=theme.isDark ? "rgba(20,30,60,0.62)" : "rgba(255,255,255,0.60)"; e.currentTarget.style.transform="scale(1)"; }}>
-                <ItemIcon name={p.name} category={p.category} emoji={p.emoji} size={36} emojiSize={26}/>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <span style={{ display:"block", fontSize:14, fontWeight:700 }}>{p.name}</span>
-                  <span style={{ fontSize:11, color:"var(--accent)", fontWeight:600, opacity:0.85 }}>{p.category}</span>
+                onMouseEnter={e => { e.currentTarget.style.background=cardBgHov; e.currentTarget.style.boxShadow=theme.isDark?"0 4px 18px rgba(0,0,0,0.30)":"0 4px 16px rgba(80,60,20,0.10)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background=cardBg;    e.currentTarget.style.boxShadow=theme.isDark?"0 1px 8px rgba(0,0,0,0.20)":"0 1px 6px rgba(80,60,20,0.05)"; }}
+                onTouchStart={e => { e.currentTarget.style.background=cardBgHov; e.currentTarget.style.transform="scale(0.982)"; }}
+                onTouchEnd={e   => { e.currentTarget.style.background=cardBg;    e.currentTarget.style.transform="scale(1)"; }}
+              >
+                {/* Emoji in a soft themed bubble */}
+                <div style={{
+                  width:40, height:40, borderRadius:12, flexShrink:0,
+                  background: iconBg,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  fontSize:22, lineHeight:1,
+                  border: `1px solid ${cardBorder}`,
+                }}>
+                  {ITEM_ICONS[p.name] || CAT_ICONS[p.category] || p.emoji}
                 </div>
-                {/* ── Precio editable: tocar lo abre como campo, sin agregar el artículo ── */}
+
+                {/* Name + category */}
+                <div style={{ flex:1, minWidth:0 }}>
+                  <span style={{ display:"block", fontSize:14, fontWeight:700, letterSpacing:"-0.01em", color: theme.isDark ? "#E8EDF3" : theme.textPrimary }}>{p.name}</span>
+                  <span style={{ fontSize:11, color:"var(--accent)", fontWeight:600, opacity:0.80, letterSpacing:"0.01em" }}>{p.category}</span>
+                </div>
+
+                {/* Price badge / editable input */}
                 {isEditingThisPrice ? (
                   <input autoFocus type="number" inputMode="decimal" placeholder="0" value={tempPresetPrice}
                     onClick={e => e.stopPropagation()}
                     onChange={e => setTempPresetPrice(e.target.value)}
                     onBlur={() => savePresetPrice(p.name)}
                     onKeyDown={e => e.key==="Enter" && savePresetPrice(p.name)}
-                    style={{ width:72, background:"#FEFCF9", border:"1.5px solid var(--accent)", borderRadius:"var(--radius-sm,10px)", color:"var(--accentDark)", fontSize:12, fontWeight:800, padding:"3px 7px", textAlign:"right", outline:"none", flexShrink:0 }} />
+                    style={{ width:76, background: theme.isDark ? "#1E2A5E" : "#FEFCF9", border:"1.5px solid var(--accent)", borderRadius:10, color:"var(--accentDark)", fontSize:12, fontWeight:800, padding:"4px 8px", textAlign:"right", outline:"none", flexShrink:0 }} />
                 ) : (
                   <button
                     onClick={(e) => { e.stopPropagation(); setEditingPresetPrice(p.name); setTempPresetPrice(overridden !== undefined ? overridden : (crp ? String(crp) : "")); }}
-                    style={{ fontSize:12, color: theme.isDark ? "#a5b4fc" : theme.tagColor, fontWeight:800, background: theme.isDark ? "rgba(99,102,241,0.18)" : "rgba(var(--accent-rgb),0.10)", border:"none", borderRadius:"var(--radius-sm,10px)", padding:"3px 9px", flexShrink:0, cursor:"pointer", fontFamily:"inherit" }}>
+                    style={{
+                      fontSize:11, fontWeight:800,
+                      color: theme.isDark ? "#a5b4fc" : theme.tagColor,
+                      background: priceBg,
+                      border: `1px solid ${cardBorder}`,
+                      borderRadius:10, padding:"4px 9px",
+                      flexShrink:0, cursor:"pointer", fontFamily:"inherit",
+                      letterSpacing:"0.01em",
+                      transition:"background .12s ease",
+                    }}>
                     {displayPrice ? `${sym}${Math.round(displayPrice).toLocaleString()}` : "+ precio"}
                   </button>
                 )}
-                <button onClick={(e) => addPreset(p,e)}
-                  style={{ background:"linear-gradient(135deg,var(--accent),var(--accentDark))", color:"#fff", width:30, height:30, borderRadius:"var(--radius-sm,10px)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, fontWeight:900, flexShrink:0, boxShadow:`0 2px 8px rgba(var(--accent-rgb),0.32)`, border:"none", cursor:"pointer" }}>+</button>
+
+                {/* Add button */}
+                <button
+                  onClick={(e) => addPreset(p,e)}
+                  style={{
+                    background:"linear-gradient(135deg,var(--accent),var(--accentDark))",
+                    color:"#fff", width:32, height:32,
+                    borderRadius:10,
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    fontSize:20, fontWeight:900, flexShrink:0,
+                    boxShadow:`0 2px 8px rgba(var(--accent-rgb),0.34)`,
+                    border:"none", cursor:"pointer",
+                    transition:"transform .14s cubic-bezier(0.34,1.4,0.64,1), box-shadow .14s ease",
+                  }}
+                  onMouseDown={e  => { e.currentTarget.style.transform="scale(0.88)"; e.currentTarget.style.boxShadow=`0 1px 4px rgba(var(--accent-rgb),0.20)`; }}
+                  onMouseUp={e    => { e.currentTarget.style.transform="scale(1)";    e.currentTarget.style.boxShadow=`0 2px 8px rgba(var(--accent-rgb),0.34)`; }}
+                  onTouchStart={e => { e.currentTarget.style.transform="scale(0.88)"; e.currentTarget.style.boxShadow=`0 1px 4px rgba(var(--accent-rgb),0.20)`; }}
+                  onTouchEnd={e   => { e.currentTarget.style.transform="scale(1)";    e.currentTarget.style.boxShadow=`0 2px 8px rgba(var(--accent-rgb),0.34)`; }}
+                >+</button>
               </div>
             );
           })

@@ -2137,27 +2137,74 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
       <div className="view-enter-fwd" style={{ display:"flex", flexDirection:"column", height:"100svh", overflow:"hidden" }}>
       {/* ── Header ── */}
       <div style={{
-        ...Sth.header,
+        display:"flex", alignItems:"center",
+        padding:"14px 16px 13px",
+        gap:10,
+        position:"sticky", top:0, zIndex:10,
         background: theme.isDark
-          ? "rgba(15,23,42,0.72)"
-          : "rgba(255,255,255,0.62)",
-        backdropFilter: "blur(18px) saturate(1.6)",
-        WebkitBackdropFilter: "blur(18px) saturate(1.6)",
+          ? "rgba(12,18,38,0.75)"
+          : "rgba(255,255,255,0.58)",
+        backdropFilter: "blur(22px) saturate(1.8)",
+        WebkitBackdropFilter: "blur(22px) saturate(1.8)",
         borderBottom: theme.isDark
-          ? "1px solid rgba(255,255,255,0.08)"
-          : "1px solid rgba(255,255,255,0.72)",
+          ? "1px solid rgba(255,255,255,0.07)"
+          : "1px solid rgba(255,255,255,0.80)",
         boxShadow: theme.isDark
-          ? "0 2px 20px rgba(0,0,0,0.30)"
-          : "0 2px 20px rgba(80,60,20,0.08)",
+          ? "0 2px 24px rgba(0,0,0,0.28)"
+          : "0 2px 16px rgba(80,60,20,0.07)",
       }}>
-        <button onClick={() => { Sounds.navBack(); onBack(); }} style={{ background:"none", border:"none", color:"var(--accent)", cursor:"pointer", padding:"4px 8px 4px 0", display:"flex", alignItems:"center", borderRadius:10, transition:"opacity .15s" }} onMouseEnter={e=>e.currentTarget.style.opacity=".7"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
-          <span style={{ fontSize:20, lineHeight:1, color:"var(--accent)" }}>‹</span>
-        </button>
-        <span style={{ flex:1, fontWeight:800, fontSize:18, color: theme.isDark ? "#E2E8F0" : "#1A2118" }}>Agregar artículos</span>
-        <button onClick={() => { Sounds.save(); onBack(); }}
-          style={{ background:"linear-gradient(135deg,var(--accent),var(--accentDark))", border:"none", borderRadius:20, padding:"7px 16px", color:"#fff", fontSize:13, fontWeight:800, cursor:"pointer", boxShadow:"0 2px 8px rgba(var(--accent-rgb,22,163,74),0.32)" }}>
-          Listo ✓
-        </button>
+        {/* Back chevron — soft pill, no flash */}
+        <button
+          onClick={() => { Sounds.navBack(); onBack(); }}
+          style={{
+            background: theme.isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)",
+            border:"none",
+            color:"var(--accent)",
+            cursor:"pointer",
+            width:34, height:34,
+            display:"flex", alignItems:"center", justifyContent:"center",
+            borderRadius:10,
+            fontSize:20, lineHeight:1,
+            flexShrink:0,
+            transition:"background .18s ease, transform .16s cubic-bezier(0.34,1.4,0.64,1)",
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = theme.isDark ? "rgba(255,255,255,0.13)" : "rgba(0,0,0,0.09)"}
+          onMouseLeave={e => e.currentTarget.style.background = theme.isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)"}
+          onMouseDown={e  => e.currentTarget.style.transform = "scale(0.88)"}
+          onMouseUp={e    => e.currentTarget.style.transform = "scale(1)"}
+          onTouchStart={e => e.currentTarget.style.transform = "scale(0.88)"}
+          onTouchEnd={e   => e.currentTarget.style.transform = "scale(1)"}
+        >‹</button>
+
+        {/* Title + emoji badge */}
+        <div style={{ flex:1, display:"flex", alignItems:"center", gap:8, minWidth:0 }}>
+          <span style={{ fontSize:18, lineHeight:1 }}>🛍️</span>
+          <span style={{
+            fontWeight:800, fontSize:17,
+            color: theme.isDark ? "#E2E8F0" : "#1A2118",
+            letterSpacing:"-0.01em",
+            whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis",
+          }}>Agregar artículos</span>
+        </div>
+
+        {/* Done button — accent pill, smooth press */}
+        <button
+          onClick={() => { Sounds.save(); onBack(); }}
+          style={{
+            background:"linear-gradient(135deg,var(--accent),var(--accentDark))",
+            border:"none", borderRadius:20,
+            padding:"7px 16px",
+            color:"#fff", fontSize:13, fontWeight:800,
+            cursor:"pointer", flexShrink:0,
+            boxShadow:"0 2px 10px rgba(var(--accent-rgb,22,163,74),0.34)",
+            transition:"transform .16s cubic-bezier(0.34,1.4,0.64,1), box-shadow .16s ease",
+            letterSpacing:"0.01em",
+          }}
+          onMouseDown={e  => { e.currentTarget.style.transform="scale(0.93)"; e.currentTarget.style.boxShadow="0 1px 4px rgba(var(--accent-rgb,22,163,74),0.22)"; }}
+          onMouseUp={e    => { e.currentTarget.style.transform="scale(1)";    e.currentTarget.style.boxShadow="0 2px 10px rgba(var(--accent-rgb,22,163,74),0.34)"; }}
+          onTouchStart={e => { e.currentTarget.style.transform="scale(0.93)"; e.currentTarget.style.boxShadow="0 1px 4px rgba(var(--accent-rgb,22,163,74),0.22)"; }}
+          onTouchEnd={e   => { e.currentTarget.style.transform="scale(1)";    e.currentTarget.style.boxShadow="0 2px 10px rgba(var(--accent-rgb,22,163,74),0.34)"; }}
+        >Listo ✓</button>
       </div>
 
       {/* ── Custom item row ── */}

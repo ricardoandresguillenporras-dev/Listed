@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { App as CapApp } from "@capacitor/app";
 
+// ── Theme wallpaper backgrounds — gingham + daisy pattern per theme ──
+import bgGreen from "./assets/bg-green.webp";
+import bgPink from "./assets/bg-pink.webp";
+import bgPurple from "./assets/bg-purple.webp";
+
 // ── 🔊 Sound Engine (Web Audio API — 100% copyright-free synthesized sounds) ──
 // All sounds are generated algorithmically; no audio files, no licensing issues.
 function createAudioCtx() {
@@ -2519,13 +2524,15 @@ input, select, button { font-family: inherit; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   GINGHAM BACKGROUNDS — CSS-variable driven, changes instantly on theme switch
-   data-theme is set on <html>, so :root vars cascade down to body.
+   GINGHAM BACKGROUNDS — wallpaper image per theme, set via CSS variable
+   so it changes instantly on theme switch. data-theme is set on <html>,
+   so :root vars cascade down to body.
    ══════════════════════════════════════════════════════════════════════ */
 
 /* ── Background token defaults: 🌿 Pistachio ───────────────────────── */
 :root {
   --bg-base:       #F1E6D5;  /* Almond Beige */
+  --bg-wallpaper:  url("${bgGreen}");
   --bg-band:       rgba(167,212,90,0.38);   /* Young Pistachio gingham */
   --bg-seam:       rgba(255,255,255,0.65);  /* white stitched seam */
   --bg-bloom1:     rgba(241,230,213,0.75);  /* Warm Ivory top-right */
@@ -2539,6 +2546,7 @@ input, select, button { font-family: inherit; }
 /* ── Background token overrides: 🌸 Sakura ─────────────────────────── */
 [data-theme="pink"] {
   --bg-base:       #FFF5F7;  /* Marshmallow White */
+  --bg-wallpaper:  url("${bgPink}");
   --bg-band:       rgba(240,160,184,0.38);  /* Ballet Slipper Pink gingham */
   --bg-seam:       rgba(255,255,255,0.72);  /* white stitched seam */
   --bg-bloom1:     rgba(255,240,248,0.80);  /* Powder Pink top-right */
@@ -2552,6 +2560,7 @@ input, select, button { font-family: inherit; }
 /* ── Background token overrides: 🌙 Blueberry ──────────────────────── */
 [data-theme="moon"] {
   --bg-base:       #151A35;  /* Blueberry Black */
+  --bg-wallpaper:  url("${bgPurple}");
   --bg-band:       rgba(79,115,199,0.18);   /* Cornflower Blue gingham */
   --bg-seam:       rgba(156,196,242,0.14);  /* Glacier Blue seam */
   --bg-bloom1:     rgba(28,40,94,0.80);     /* Midnight Blue top */
@@ -2570,11 +2579,25 @@ body {
   min-height: 100svh;
   overflow-x: hidden;
   background-color: var(--bg-base);
-  transition: background-color 0.55s ease;
+  background-image: var(--bg-wallpaper);
+  background-size: cover;
+  background-position: top center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  transition: background-color 0.55s ease, background-image 0.55s ease;
 }
 
-/* Moon dark text override — already in vars but ensure body picks it up */
-[data-theme="moon"] body { color: #E8EDF3; }
+/* Moon dark text override — already in vars but ensure body picks it up.
+   The purple wallpaper art is a light pastel pattern, so a dark scrim is
+   layered on top of it here (not baked into the image) to keep the
+   theme's light text readable — same wallpaper file, no separate dark
+   asset needed. */
+[data-theme="moon"] body {
+  color: #E8EDF3;
+  background-image:
+    linear-gradient(rgba(10,12,28,0.78), rgba(10,12,28,0.82)),
+    var(--bg-wallpaper);
+}
 
 /* ══════════════════════════════════════════════════════════════════════
    SURFACE COMPONENTS — theme-aware cards, inputs, buttons

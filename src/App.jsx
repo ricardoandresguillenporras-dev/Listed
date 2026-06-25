@@ -2610,7 +2610,29 @@ function StatsView({ history, budget, sym }) {
   const periodLabels = { month: "Este mes", q3: "Últimos 3 meses", all: "Todo el tiempo" };
 
   return (
-    <div style={{ padding: "0 0 32px" }}>
+    <div style={{ height:"100%", display:"flex", flexDirection:"column", overflow:"hidden" }}>
+
+      {/* Stats page header — vive dentro de StatsView (igual que el hero banner vive
+          dentro de ListsView) para que ambas pantallas tengan la misma estructura
+          al deslizar entre ellas. Mismo aspecto visual de siempre, solo reubicado. */}
+      <div style={{
+        display:"flex", alignItems:"center", gap:12,
+        padding:"16px 16px 12px",
+        background:"var(--headerBg)", borderBottom:"1px solid var(--cardBorder)",
+        boxShadow:"0 2px 16px rgba(0,0,0,0.05)",
+        flexShrink:0,
+      }}>
+        <div style={{ width:40, height:40, borderRadius:14, background:"var(--soft)", border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <span style={{ fontSize:22, lineHeight:1 }}>📊</span>
+        </div>
+        <div>
+          <div style={{ fontSize:17, fontWeight:800, color:"var(--textPrimary)", letterSpacing:"-0.01em" }}>Estadísticas</div>
+          <div style={{ fontSize:12, color:"var(--textMuted)", marginTop:1 }}>Tus hábitos de compra</div>
+        </div>
+      </div>
+
+      {/* ── Área con scroll propio — igual patrón que el cuerpo de ListsView ── */}
+      <div style={{ flex:1, minHeight:0, overflowY:"auto", padding:"0 0 calc(var(--bottombar-h, 64px) + 16px)" }}>
 
       {/* ── Period tabs ── */}
       <div style={{
@@ -2826,6 +2848,7 @@ function StatsView({ history, budget, sym }) {
           </div>
         )}
 
+      </div>
       </div>
     </div>
   );
@@ -3841,23 +3864,7 @@ export default function SuperLista() {
                 onDeleteList={handleDeleteList}
                 onCreateList={handleCreateList} />
             </div>
-            <div style={{ width:`${TAB_W}%`, height:"100%", flexShrink:0, minHeight:0, overflowY:"auto", paddingBottom:80 }}>
-              {/* Stats page header */}
-              <div style={{
-                display:"flex", alignItems:"center", gap:12,
-                padding:"16px 16px 12px",
-                background:"var(--headerBg)", borderBottom:"1px solid var(--cardBorder)",
-                boxShadow:"0 2px 16px rgba(0,0,0,0.05)",
-                position:"sticky", top:0, zIndex:10,
-              }}>
-                <div style={{ width:40, height:40, borderRadius:14, background:"var(--soft)", border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  <span style={{ fontSize:22, lineHeight:1 }}>📊</span>
-                </div>
-                <div>
-                  <div style={{ fontSize:17, fontWeight:800, color:"var(--textPrimary)", letterSpacing:"-0.01em" }}>Estadísticas</div>
-                  <div style={{ fontSize:12, color:"var(--textMuted)", marginTop:1 }}>Tus hábitos de compra</div>
-                </div>
-              </div>
+            <div style={{ width:`${TAB_W}%`, height:"100%", flexShrink:0, minHeight:0, display:"flex", flexDirection:"column", overflow:"hidden" }}>
               <StatsView history={history} budget={profile.budget} sym={sym} />
             </div>
           </SwipeTabContainer>

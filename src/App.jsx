@@ -938,7 +938,15 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
   };
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"#241D14", zIndex:70, display:"flex", alignItems:"flex-end", justifyContent:"center" }}
+    <div
+      style={{
+        position:"fixed", inset:0, zIndex:70,
+        display:"flex", alignItems:"flex-end", justifyContent:"center",
+        background: closing ? "rgba(0,0,0,0)" : "rgba(20,14,6,0.52)",
+        backdropFilter: closing ? "blur(0px)" : "blur(4px)",
+        WebkitBackdropFilter: closing ? "blur(0px)" : "blur(4px)",
+        transition: "background .20s ease, backdrop-filter .20s ease",
+      }}
       onClick={(e) => e.target===e.currentTarget && requestClose()}>
       <div ref={sheetRef} className="wc-sheet" style={{ width:"100%", maxWidth:430, animation: closing ? "none" : "slideUp .28s cubic-bezier(.34,1.2,.64,1)", maxHeight:"90vh", overflow:"hidden", display:"flex", flexDirection:"column" }}>
         <SheetHandle handleProps={handleProps} />
@@ -1075,7 +1083,15 @@ function ContextMenu({ item, onClose, onDelete, onDuplicate, onEdit, sym }) {
   const subtotal = (parseFloat(item.price)||0)*(item.qty||1);
   const { sheetRef, handleProps, closing, requestClose } = useDragToDismiss(onClose);
   return (
-    <div style={{ position:"fixed", inset:0, background:"#241D14", zIndex:50, display:"flex", alignItems:"flex-end", justifyContent:"center" }}
+    <div
+      style={{
+        position:"fixed", inset:0, zIndex:50,
+        display:"flex", alignItems:"flex-end", justifyContent:"center",
+        background: closing ? "rgba(0,0,0,0)" : "rgba(20,14,6,0.52)",
+        backdropFilter: closing ? "blur(0px)" : "blur(4px)",
+        WebkitBackdropFilter: closing ? "blur(0px)" : "blur(4px)",
+        transition: "background .20s ease, backdrop-filter .20s ease",
+      }}
       onClick={(e) => e.target===e.currentTarget && requestClose()}>
       <div ref={sheetRef} className="wc-context-menu" style={{ width:"100%", maxWidth:430, paddingBottom:20, overflow:"hidden", animation: closing ? "none" : undefined }}>
         <div style={{ display:"flex", alignItems:"center", gap:12, padding:"18px 20px 14px", borderBottom:"1px solid color-mix(in srgb, var(--accent) 12%, var(--cardBg))" }}>
@@ -1125,7 +1141,15 @@ function EditModal({ item, onClose, onSave, sym }) {
   const { sheetRef, handleProps, closing, requestClose } = useDragToDismiss(onClose);
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"#241D14", zIndex:60, display:"flex", alignItems:"flex-end", justifyContent:"center" }}
+    <div
+      style={{
+        position:"fixed", inset:0, zIndex:60,
+        display:"flex", alignItems:"flex-end", justifyContent:"center",
+        background: closing ? "rgba(0,0,0,0)" : "rgba(20,14,6,0.52)",
+        backdropFilter: closing ? "blur(0px)" : "blur(4px)",
+        WebkitBackdropFilter: closing ? "blur(0px)" : "blur(4px)",
+        transition: "background .20s ease, backdrop-filter .20s ease",
+      }}
       onClick={(e) => e.target===e.currentTarget && requestClose()}>
       <div ref={sheetRef} className="wc-sheet" style={{ width:"100%", maxWidth:430, padding:20, animation: closing ? "none" : "slideUp .22s ease", maxHeight:"85vh", overflowY:"auto" }}>
         <div {...handleProps} style={{ display:"flex", justifyContent:"center", padding:"0 0 14px", margin:"-20px -20px 0", cursor:"grab", touchAction:"none" }}>

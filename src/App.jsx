@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { App as CapApp } from "@capacitor/app";
+import { useSupabaseSync } from "./hooks/useSupabaseSync";
 
 // ── Theme wallpaper backgrounds — gingham + daisy pattern per theme ──
 import bgGreen from "./assets/bg-green.webp";
@@ -3942,6 +3943,14 @@ export default function SuperLista() {
   useEffect(() => { LS.set("sl5_profile",  profile);  }, [profile]);
   useEffect(() => { LS.set("sl5_history",  history);  }, [history]);
   useEffect(() => { LS.set("sl5_theme",    themeName); }, [themeName]);
+
+  // ── Supabase cloud sync — mirrors every LS write to the cloud ─────────────
+  // localStorage stays as the instant read/write cache; Supabase is the
+  // persistent layer that survives app reinstalls and enables future multi-device sync.
+  useSupabaseSync("sl_lists",    lists,    setLists,    [{ id:"default", name:"Casa", items:[], createdAt:Date.now() }]);
+  useSupabaseSync("sl_profile",  profile,  setProfile,  { name:"", budget:"" });
+  useSupabaseSync("sl_settings", settings, setSettings, { currencyCode:"CRC" });
+  useSupabaseSync("sl_history",  history,  setHistory,  []);
   // Inject Google Fonts into <head> once — not on every render
   useEffect(() => {
     if (document.getElementById("sl-gfonts")) return;

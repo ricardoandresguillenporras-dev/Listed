@@ -529,6 +529,124 @@ const ITEM_ICONS = {
   "Bolsas de basura": "🗑️",
 };
 
+// ── useDragToDismiss ──────────────────────────────────────────────────────────
+// Drag-to-close behavior for bottom sheets (ProfileModal, ContextMenu, EditModal).
+// The drag handle/header renders a "grab bar" already — this hook is what makes
+// it actually do something. Drag down past ~22% of the sheet's own height (or
+// flick fast enough) closes it with a smooth slide-down exit; otherwise it
+// springs back to rest. Returns props for the *handle* element only (not the
+// whole sheet) so it never competes with a scrollable body inside the sheet.
+function useDragToDismiss(onClose) {
+  const sheetRef   = useRef(null);
+  const startY     = useRef(0);
+  const startT     = useRef(0);
+  const dragging   = useRef(false);
+  const [closing, setClosing] = useState(false);
+  const [mouseDragActive, setMouseDragActive] = useState(false);
+
+  const getY = (e) => (e.touches ? e.touches[0].clientY : e.clientY);
+
+  // Single exit path — used by drag release AND by any explicit close
+  // (Cancel button, backdrop tap, Save button) so every way of closing
+  // the sheet gets the same slide-down instead of drag being the only
+  // animated one. Pass an `after` callback when the close should commit
+  // something (e.g. Save) instead of just calling onClose.
+  const requestClose = useCallback((after) => {
+    if (closing) return;
+    setClosing(true);
+    if (sheetRef.current) {
+      sheetRef.current.style.transition = "transform .2s cubic-bezier(.22,1,.36,1)";
+      sheetRef.current.style.transform = "translate3d(0,100%,0)";
+    }
+    setTimeout(() => (after ? after() : onClose?.()), 200);
+  }, [closing, onClose]);
+
+  const resolveDrag = useCallback((dy, dt) => {
+    if (!sheetRef.current) return;
+    const velocity = dy / Math.max(1, dt); // px/ms
+    const sheetH = sheetRef.current.offsetHeight || 1;
+    const passedThreshold = dy > sheetH * 0.22 || velocity > 0.6;
+
+    if (passedThreshold && dy > 0) {
+      requestClose();
+    } else {
+      sheetRef.current.style.transition = "transform .22s cubic-bezier(.22,1,.36,1)";
+      sheetRef.current.style.transform = "translate3d(0,0,0)";
+    }
+  }, [requestClose]);
+
+  // Touch: the browser keeps dispatching touchmove/touchend to the same
+  // target even if the finger moves off the small handle, so these can be
+  // plain handlers wired directly via handleProps.
+  const onTouchMove = useCallback((e) => {
+    if (!dragging.current || !sheetRef.current) return;
+    const dy = getY(e) - startY.current;
+    if (dy <= 0) { sheetRef.current.style.transform = "translate3d(0,0,0)"; return; }
+    sheetRef.current.style.transform = `translate3d(0,${dy}px,0)`;
+  }, []);
+
+  const onTouchEnd = useCallback((e) => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    const dy = getY(e.changedTouches ? { touches: e.changedTouches } : e) - startY.current;
+    resolveDrag(dy, Date.now() - startT.current);
+  }, [resolveDrag]);
+
+  // Mouse: dragging off a small handle is normal, so movement/release must
+  // be tracked on `document`, not the handle. Declared as an effect keyed
+  // on `mouseDragActive` (mount/unmount listeners) instead of refs that
+  // self-reference their own removal — React's hooks linter (React 19)
+  // disallows writing/reading ref.current during render, which the old
+  // "ref that always points at the latest callback" pattern required.
+  useEffect(() => {
+    if (!mouseDragActive) return;
+    const handleMove = (e) => {
+      if (!sheetRef.current) return;
+      const dy = e.clientY - startY.current;
+      sheetRef.current.style.transform = dy > 0 ? `translate3d(0,${dy}px,0)` : "translate3d(0,0,0)";
+    };
+    const handleUp = (e) => {
+      setMouseDragActive(false);
+      dragging.current = false;
+      resolveDrag(e.clientY - startY.current, Date.now() - startT.current);
+    };
+    document.addEventListener("mousemove", handleMove);
+    document.addEventListener("mouseup", handleUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("mouseup", handleUp);
+    };
+  }, [mouseDragActive, resolveDrag]);
+
+  const onStart = useCallback((e) => {
+    if (closing) return;
+    dragging.current = true;
+    startY.current = getY(e);
+    startT.current = Date.now();
+    if (sheetRef.current) sheetRef.current.style.transition = "none";
+    if (e.type === "mousedown") setMouseDragActive(true);
+  }, [closing]);
+
+  const handleProps = {
+    onTouchStart: onStart, onTouchMove, onTouchEnd,
+    onMouseDown:  onStart,
+  };
+
+  return { sheetRef, handleProps, closing, requestClose };
+}
+
+// Visual "grab bar" — renders the pill AND wires up the drag gesture passed in.
+// Kept as its own component so every sheet gets the same hit target/cursor.
+function SheetHandle({ handleProps, color }) {
+  return (
+    <div
+      {...handleProps}
+      style={{ display:"flex", justifyContent:"center", padding:"10px 0 8px", cursor:"grab", touchAction:"none" }}>
+      <div style={{ width:36, height:4, borderRadius:99, background: color || "color-mix(in srgb, var(--accent) 18%, white)" }} />
+    </div>
+  );
+}
+
 // Renders the best emoji for an item — specific item first, then category fallback, then item emoji
 function ItemIcon({ name, category, emoji, size=32, emojiSize=24 }) {
   const icon = ITEM_ICONS[name] || CAT_ICONS[category] || emoji;
@@ -645,6 +763,8 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
   const [newAmt, setNewAmt]       = useState("");
   const sym = CURRENCIES.find(c=>c.code===(currency||"CRC"))?.symbol||"₡";
 
+  const { sheetRef, handleProps, closing, requestClose } = useDragToDismiss(onClose);
+
   const saveAmts = (amts) => { setQuickAmts(amts); try { localStorage.setItem("sl5_quickAmts", JSON.stringify(amts)); } catch {} };
   const removeAmt = (amt) => saveAmts(quickAmts.filter(a => a !== amt));
   const confirmAmt = () => {
@@ -656,9 +776,9 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
 
   return (
     <div style={{ position:"fixed", inset:0, background:"#241D14", zIndex:70, display:"flex", alignItems:"flex-end", justifyContent:"center" }}
-      onClick={(e) => e.target===e.currentTarget && onClose()}>
-      <div className="wc-sheet" style={{ width:"100%", maxWidth:430, animation:"slideUp .28s cubic-bezier(.34,1.2,.64,1)", maxHeight:"90vh", overflow:"hidden", display:"flex", flexDirection:"column" }}>
-        <div style={{ display:"flex", justifyContent:"center", padding:"12px 0 0" }}><div style={{ width:36, height:4, borderRadius:99, background:"color-mix(in srgb, var(--accent) 18%, white)" }} /></div>
+      onClick={(e) => e.target===e.currentTarget && requestClose()}>
+      <div ref={sheetRef} className="wc-sheet" style={{ width:"100%", maxWidth:430, animation: closing ? "none" : "slideUp .28s cubic-bezier(.34,1.2,.64,1)", maxHeight:"90vh", overflow:"hidden", display:"flex", flexDirection:"column" }}>
+        <SheetHandle handleProps={handleProps} />
         <div style={{ display:"flex", alignItems:"center", padding:"16px 20px 0", justifyContent:"space-between" }}>
           <div style={{ width:44, height:44, borderRadius:14, background:"var(--soft)", border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center" }}>
             <span style={{ fontSize:22, lineHeight:1 }}>👤</span>
@@ -667,7 +787,7 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
             <div style={{ fontSize:17, fontWeight:800, color:"var(--textPrimary)" }}>{profile.name||"Mi Perfil"}</div>
             <div style={{ fontSize:12, color:"var(--textMuted)", marginTop:1 }}>Configuración personal</div>
           </div>
-          <button onClick={onClose} style={{ background:"color-mix(in srgb, var(--accent) 10%, var(--cardBg))", border:"none", color:"var(--textMuted)", width:32, height:32, borderRadius:"50%", fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"background .12s" }}
+          <button onClick={requestClose} style={{ background:"color-mix(in srgb, var(--accent) 10%, var(--cardBg))", border:"none", color:"var(--textMuted)", width:32, height:32, borderRadius:"50%", fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"background .12s" }}
             onMouseEnter={e=>e.currentTarget.style.background="color-mix(in srgb, var(--accent) 18%, white)"}
             onMouseLeave={e=>e.currentTarget.style.background="color-mix(in srgb, var(--accent) 10%, var(--cardBg))"}>✕</button>
         </div>
@@ -763,10 +883,10 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
           )}
         </div>
         <div style={{ padding:"16px 20px 28px", display:"flex", gap:10 }}>
-          <button onClick={onClose} style={{ flex:1, background:"color-mix(in srgb, var(--accent) 8%, var(--cardBg))", border:"1px solid var(--border)", borderRadius:"var(--radius-md,16px)", padding:"13px 12px", color:"var(--textMuted)", fontSize:14, fontWeight:600, cursor:"pointer", fontFamily:"inherit", transition:"background .12s ease" }}
+          <button onClick={requestClose} style={{ flex:1, background:"color-mix(in srgb, var(--accent) 8%, var(--cardBg))", border:"1px solid var(--border)", borderRadius:"var(--radius-md,16px)", padding:"13px 12px", color:"var(--textMuted)", fontSize:14, fontWeight:600, cursor:"pointer", fontFamily:"inherit", transition:"background .12s ease" }}
             onMouseEnter={e=>e.currentTarget.style.background="color-mix(in srgb, var(--accent) 14%, var(--cardBg))"}
             onMouseLeave={e=>e.currentTarget.style.background="color-mix(in srgb, var(--accent) 8%, var(--cardBg))"}>Cancelar</button>
-          <button onClick={() => { Sounds.save(); onSaveProfile({ name, budget }); onSaveSettings({ currencyCode:currency }); onClose(); }}
+          <button onClick={() => { Sounds.save(); onSaveProfile({ name, budget }); onSaveSettings({ currencyCode:currency }); requestClose(); }}
             style={{ flex:2, background:"linear-gradient(135deg,var(--accent),var(--accentDark))", border:"none", borderRadius:"var(--radius-md,16px)", padding:"13px 12px", color:"#fff", fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"inherit", boxShadow:"0 4px 16px rgba(var(--accent-rgb),0.35)", transition:"transform .14s var(--ease-spring), box-shadow .14s ease" }}
             onMouseDown={e=>e.currentTarget.style.transform="scale(.96)"}
             onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}
@@ -790,18 +910,19 @@ function EditLabel({ children }) {
 // ── ContextMenu ───────────────────────────────────────────────────────────────
 function ContextMenu({ item, onClose, onDelete, onDuplicate, onEdit, sym }) {
   const subtotal = (parseFloat(item.price)||0)*(item.qty||1);
+  const { sheetRef, handleProps, closing, requestClose } = useDragToDismiss(onClose);
   return (
     <div style={{ position:"fixed", inset:0, background:"#241D14", zIndex:50, display:"flex", alignItems:"flex-end", justifyContent:"center" }}
-      onClick={(e) => e.target===e.currentTarget && onClose()}>
-      <div className="wc-context-menu" style={{ width:"100%", maxWidth:430, paddingBottom:20, overflow:"hidden" }}>
+      onClick={(e) => e.target===e.currentTarget && requestClose()}>
+      <div ref={sheetRef} className="wc-context-menu" style={{ width:"100%", maxWidth:430, paddingBottom:20, overflow:"hidden", animation: closing ? "none" : undefined }}>
         <div style={{ display:"flex", alignItems:"center", gap:12, padding:"18px 20px 14px", borderBottom:"1px solid color-mix(in srgb, var(--accent) 12%, var(--cardBg))" }}>
           <span style={{ fontSize:28 }}><ItemIcon name={item.name} category={item.category} emoji={item.emoji} size={40} emojiSize={28}/></span>
           <div>
             <div style={{ fontSize:16, fontWeight:800, color:"var(--textPrimary)" }}>{item.name}</div>
             <div style={{ fontSize:12, color:"var(--textMuted)", marginTop:2 }}>{item.qty||1} {item.unit||"pza"}{item.price?` · ${sym}${Math.round(subtotal).toLocaleString()}`:""}</div>
           </div>
-          {/* drag handle */}
-          <div style={{ flex:1, display:"flex", justifyContent:"center" }}>
+          {/* drag handle — actually draggable now, not just decorative */}
+          <div {...handleProps} style={{ flex:1, display:"flex", justifyContent:"center", cursor:"grab", touchAction:"none", padding:"6px 0" }}>
             <div style={{ width:36, height:4, borderRadius:99, background:"color-mix(in srgb, var(--accent) 20%, white)", marginBottom:2 }} />
           </div>
         </div>
@@ -811,7 +932,7 @@ function ContextMenu({ item, onClose, onDelete, onDuplicate, onEdit, sym }) {
           <div style={{ height:1, background:"color-mix(in srgb, var(--accent) 10%, var(--cardBg))", margin:"4px 8px" }} />
           <CtxBtn icon="🗑" danger onClick={onDelete}>Eliminar</CtxBtn>
           <div style={{ height:1, background:"color-mix(in srgb, var(--accent) 10%, var(--cardBg))", margin:"4px 8px" }} />
-          <CtxBtn icon="✕" muted onClick={onClose}>Cancelar selección</CtxBtn>
+          <CtxBtn icon="✕" muted onClick={requestClose}>Cancelar selección</CtxBtn>
         </div>
       </div>
     </div>
@@ -838,11 +959,15 @@ function EditModal({ item, onClose, onSave, sym }) {
   const [note,  setNote]  = useState(item.note||"");
   const subtotal = (parseFloat(price)||0)*qty;
   const presetPrice = CR_PRICES[item.name];
+  const { sheetRef, handleProps, closing, requestClose } = useDragToDismiss(onClose);
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"#241D14", zIndex:60, display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
-      <div className="wc-sheet" style={{ width:"100%", maxWidth:430, padding:20, animation:"slideUp .22s ease", maxHeight:"85vh", overflowY:"auto" }}>
-        <div style={{ width:36, height:4, borderRadius:99, background:"color-mix(in srgb, var(--accent) 20%, white)", margin:"0 auto 18px" }} />
+    <div style={{ position:"fixed", inset:0, background:"#241D14", zIndex:60, display:"flex", alignItems:"flex-end", justifyContent:"center" }}
+      onClick={(e) => e.target===e.currentTarget && requestClose()}>
+      <div ref={sheetRef} className="wc-sheet" style={{ width:"100%", maxWidth:430, padding:20, animation: closing ? "none" : "slideUp .22s ease", maxHeight:"85vh", overflowY:"auto" }}>
+        <div {...handleProps} style={{ display:"flex", justifyContent:"center", padding:"0 0 14px", margin:"-20px -20px 0", cursor:"grab", touchAction:"none" }}>
+          <div style={{ width:36, height:4, borderRadius:99, background:"color-mix(in srgb, var(--accent) 20%, white)", marginTop:8 }} />
+        </div>
         <div style={{ fontSize:16, fontWeight:800, marginBottom:16, display:"flex", alignItems:"center", gap:10, color:"var(--textPrimary)" }}>
           <span style={{ fontSize:28 }}><ItemIcon name={item.name} category={item.category} emoji={item.emoji} size={40} emojiSize={28}/></span> Editar artículo
         </div>
@@ -879,10 +1004,10 @@ function EditModal({ item, onClose, onSave, sym }) {
           </div>
         )}
         <div style={{ display:"flex", gap:10, marginTop:18 }}>
-          <button onClick={onClose} style={{ flex:1, background:"color-mix(in srgb, var(--accent) 8%, var(--cardBg))", border:"1px solid var(--border)", borderRadius:"var(--radius-md,16px)", padding:"13px 12px", color:"var(--textMuted)", fontSize:14, fontWeight:600, cursor:"pointer", fontFamily:"inherit", transition:"background .12s ease" }}
+          <button onClick={requestClose} style={{ flex:1, background:"color-mix(in srgb, var(--accent) 8%, var(--cardBg))", border:"1px solid var(--border)", borderRadius:"var(--radius-md,16px)", padding:"13px 12px", color:"var(--textMuted)", fontSize:14, fontWeight:600, cursor:"pointer", fontFamily:"inherit", transition:"background .12s ease" }}
             onMouseEnter={e=>e.currentTarget.style.background="color-mix(in srgb, var(--accent) 14%, var(--cardBg))"}
             onMouseLeave={e=>e.currentTarget.style.background="color-mix(in srgb, var(--accent) 8%, var(--cardBg))"}>Cancelar</button>
-          <button onClick={() => { Sounds.save(); onSave({ ...item, name, price, qty, unit, note }); }}
+          <button onClick={() => { Sounds.save(); requestClose(() => onSave({ ...item, name, price, qty, unit, note })); }}
             style={{ flex:2, background:"linear-gradient(135deg,var(--accent),var(--accentDark))", border:"none", borderRadius:"var(--radius-md,16px)", padding:"13px 12px", color:"#fff", fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"inherit", boxShadow:"0 4px 16px rgba(var(--accent-rgb),0.32)", transition:"transform .14s var(--ease-spring), box-shadow .14s ease" }}
             onMouseDown={e=>e.currentTarget.style.transform="scale(.96)"}
             onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}

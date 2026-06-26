@@ -397,7 +397,7 @@ const makeStyles = (theme) => ({
   app: {
     maxWidth: 430, margin: "0 auto", height: "100svh",
     background: "transparent", display: "flex", flexDirection: "column",
-    fontFamily: "'MeltSwashes', cursive",
+    fontFamily: "'Outfit', 'Segoe UI', sans-serif",
     color: theme.isDark ? theme.textPrimary : "#1A2118",
     isolation: "isolate", overflow: "hidden",
   },
@@ -949,7 +949,7 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
         transition: "background .20s ease, backdrop-filter .20s ease",
       }}
       onClick={(e) => e.target===e.currentTarget && requestClose()}>
-      <div ref={sheetRef} className="wc-sheet" style={{ width:"100%", maxWidth:430, animation: closing ? "none" : "slideUp .28s cubic-bezier(.34,1.2,.64,1)", maxHeight:"90vh", overflow:"hidden", display:"flex", flexDirection:"column", fontFamily:"'MeltSwashes', cursive" }}>
+      <div ref={sheetRef} className="wc-sheet" style={{ width:"100%", maxWidth:430, animation: closing ? "none" : "slideUp .28s cubic-bezier(.34,1.2,.64,1)", maxHeight:"90vh", overflow:"hidden", display:"flex", flexDirection:"column", fontFamily:"'Outfit', 'Segoe UI', sans-serif" }}>
         <SheetHandle handleProps={handleProps} />
         <div style={{ display:"flex", alignItems:"center", padding:"16px 20px 0", justifyContent:"space-between" }}>
           <div style={{ width:44, height:44, borderRadius:14, background:"var(--soft)", border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -3297,9 +3297,9 @@ input, select, button { font-family: inherit; }
 
 /* ── Design tokens ─────────────────────────────────────────────────── */
 :root {
-  --font-hand:  'Caveat', cursive;
-  --font-body:  'Nunito', sans-serif;
-  --font-serif: 'Lora', serif;
+  --font-hand:  'Outfit', 'Segoe UI', sans-serif;
+  --font-body:  'Outfit', 'Segoe UI', sans-serif;
+  --font-serif: 'Outfit', 'Segoe UI', sans-serif;
   --radius-sm:  8px;
   --radius-md:  14px;
   --radius-lg:  20px;
@@ -4002,14 +4002,8 @@ export default function SuperLista() {
   useSupabaseSync("sl_profile",  profile,  setProfile,  { name:"", budget:"" });
   useSupabaseSync("sl_settings", settings, setSettings, { currencyCode:"CRC" });
   useSupabaseSync("sl_history",  history,  setHistory,  []);
-  // Inject Google Fonts into <head> once — not on every render
-  useEffect(() => {
-    if (document.getElementById("sl-gfonts")) return;
-    const preconnect1 = Object.assign(document.createElement("link"), { rel:"preconnect", href:"https://fonts.googleapis.com", id:"sl-gfonts" });
-    const preconnect2 = Object.assign(document.createElement("link"), { rel:"preconnect", href:"https://fonts.gstatic.com", crossOrigin:"anonymous" });
-    const fonts = Object.assign(document.createElement("link"), { rel:"stylesheet", href:"https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Caveat:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" });
-    document.head.append(preconnect1, preconnect2, fonts);
-  }, []);
+  // Outfit se carga localmente vía @font-face en index.css (el único CSS que
+  // este proyecto realmente importa) — no se necesitan fuentes externas.
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", themeName);

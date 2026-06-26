@@ -3,11 +3,11 @@
    Inspired by botanical watercolor tutorials (svetlana_e_art style)
    ═══════════════════════════════════════════════════════════════════ */
 
-/* ── Melt Swashes — self-hosted ──────────────────────────────────── */
+/* ── Outfit — self-hosted variable font ──────────────────────────── */
 @font-face {
-  font-family: 'MeltSwashes';
-  src: url('./assets/fonts/Melt-Swashes.ttf') format('truetype');
-  font-weight: normal;
+  font-family: 'Outfit';
+  src: url('./assets/fonts/Outfit-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
@@ -41,10 +41,10 @@
   --wc-olive:       #8B9E5A;
   --wc-sienna:      #B87344;
 
-  /* Typography — all roles use MeltSwashes */
-  --font-hand:   'MeltSwashes', cursive;
-  --font-body:   'MeltSwashes', cursive;
-  --font-serif:  'MeltSwashes', cursive;
+  /* Typography — all roles use Outfit */
+  --font-hand:   'Outfit', 'Segoe UI', sans-serif;
+  --font-body:   'Outfit', 'Segoe UI', sans-serif;
+  --font-serif:  'Outfit', 'Segoe UI', sans-serif;
 
   /* Spacing & radii */
   --radius-sm:  10px;
@@ -63,10 +63,10 @@
   --textMuted:   var(--wc-ink-muted);
 }
 
-/* ── Universal MeltSwashes override — covers inline JSX style objects ── */
+/* ── Universal Outfit override — covers inline JSX style objects ── */
 *, *::before, *::after,
 input, select, textarea, button {
-  font-family: 'MeltSwashes', cursive !important;
+  font-family: 'Outfit', 'Segoe UI', sans-serif !important;
 }
 
 /* ── Watercolor Paper Background ──────────────────────────────────── */
@@ -387,7 +387,7 @@ body::after {
   border-bottom: none;
   box-shadow:
     0 -8px 48px rgba(80, 60, 30, 0.12);
-  font-family: 'MeltSwashes', cursive;
+  font-family: 'Outfit', 'Segoe UI', sans-serif;
 }
 
 /* ── Typography Helpers ───────────────────────────────────────────── */

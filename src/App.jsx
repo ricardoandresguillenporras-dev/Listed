@@ -369,7 +369,7 @@ const PRESET_ITEMS = [
 const CATEGORIES = [...new Set(PRESET_ITEMS.map((i) => i.category))];
 const CAT_COLORS = {
   Lácteos: "#4ADE80", "Frutas y Verduras": "#4ADE80", Despensa: "#fcd34d",
-  Carnes: "#fca5a5", Panadería: "#fdba74", Bebidas: "#a5b4fc",
+  Carnes: "#fca5a5", Panadería: "#fdba74", Bebidas: "#D4B8F0",
   Higiene: "#f0abfc", Limpieza: "#6ee7b7",
 };
 
@@ -404,9 +404,9 @@ const makeStyles = (theme) => ({
   header: {
     display: "flex", alignItems: "center", padding: "14px 16px 12px",
     background: theme.isDark
-      ? "rgba(15,23,42,0.90)"
+      ? "rgba(17,0,26,0.92)"
       : "#EDE7D8", borderBottom: theme.isDark
-      ? "1px solid rgba(99,102,241,0.18)"
+      ? "1px solid rgba(91,26,142,0.28)"
       : "1px solid rgba(255,255,255,0.65)",
     boxShadow: theme.isDark
       ? "0 1px 12px rgba(0,0,0,0.3)"
@@ -423,9 +423,9 @@ const makeStyles = (theme) => ({
     width: 430, maxWidth: "100%", boxSizing: "border-box",
     paddingBottom: "env(safe-area-inset-bottom, 0px)",
     background: theme.isDark
-      ? "rgba(15,23,42,0.94)"
+      ? "rgba(17,0,26,0.95)"
       : "rgba(255,255,255,0.70)", borderTop: theme.isDark
-      ? "1px solid rgba(99,102,241,0.18)"
+      ? "1px solid rgba(91,26,142,0.28)"
       : "1px solid rgba(255,255,255,0.65)",
     boxShadow: theme.isDark
       ? "0 -1px 12px rgba(0,0,0,0.3)"
@@ -827,7 +827,7 @@ function BottomNav({ onNewList, onStats, onProfile, active, theme = {} }) {
     { key:"stats",   emoji:"📊",   label:"Estadísticas",  onClick:onStats   },
     { key:"profile", emoji:"👤",   label:"Perfil",        onClick:onProfile },
   ];
-  const navBg = theme.navBg || (isDark ? "#13182F" : "#FCFAF6");
+  const navBg = theme.navBg || (isDark ? "#111111" : "#FCFAF6");
   const borderColor = isDark ? `rgba(${theme.accentRgb||"98,121,200"},0.22)` : "rgba(255,255,255,0.75)";
   return (
     <div style={{
@@ -887,14 +887,14 @@ function BottomNav({ onNewList, onStats, onProfile, active, theme = {} }) {
 function TopTabs({ tabs, active, onChange, theme = {} }) {
   const isDark = theme.isDark;
   return (
-    <div style={{ display:"flex", borderBottom:`1px solid ${isDark ? "rgba(99,102,241,0.18)" : "rgba(0,0,0,0.07)"}`, background: isDark ? "rgba(15,23,42,0.95)" : "rgba(255,255,255,0.95)", paddingLeft:4, overflowX:"auto", scrollbarWidth:"none" }}>
+    <div style={{ display:"flex", borderBottom:`1px solid ${isDark ? "rgba(91,26,142,0.28)" : "rgba(0,0,0,0.07)"}`, background: isDark ? "rgba(17,0,26,0.95)" : "rgba(255,255,255,0.95)", paddingLeft:4, overflowX:"auto", scrollbarWidth:"none" }}>
       {tabs.map((tab) => {
         const on = tab.id === active;
         return (
           <button key={tab.id} onClick={() => onChange(tab.id)} style={{
             background:"none", border:"none", cursor:"pointer",
             padding:"14px 18px 12px", fontSize:14, fontWeight: on ? 800 : 500,
-            color: on ? "var(--accent)" : isDark ? "#64748B" : "#94A3B8",
+            color: on ? "var(--accent)" : isDark ? "#B06BE0" : "#D4B8F0",
             position:"relative", transition:"color .15s", whiteSpace:"nowrap", flexShrink:0,
           }}>
             {tab.label}
@@ -1599,19 +1599,19 @@ const ListCard = memo(function ListCard({ list, idx, card, theme, sym, onOpenLis
     >
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom: total>0 ? 12 : 0 }}>
         <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontSize:16, fontWeight:800, color: theme.isDark ? "#E2E8F0" : "#1A2118", letterSpacing:"-0.01em", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", lineHeight:1.3 }}>{list.name}</div>
-          <div style={{ fontSize:12, color: theme.isDark ? "#94A3B8" : "#9E9285", marginTop:3, fontWeight:500 }}>
+          <div style={{ fontSize:16, fontWeight:800, color: theme.isDark ? "#FFFFFF" : "#1A2118", letterSpacing:"-0.01em", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", lineHeight:1.3 }}>{list.name}</div>
+          <div style={{ fontSize:12, color: theme.isDark ? "#D4B8F0" : "#9E9285", marginTop:3, fontWeight:500 }}>
             {total > 0 ? `${total} artículo${total!==1?"s":""} · ${done} en bolsa` : "Vacía — toca para añadir"}
           </div>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0, marginLeft:12 }}>
           {cost > 0 && (
-            <span style={{ fontSize:13, fontWeight:800, color: theme.isDark ? "#a5b4fc" : theme.tagColor, background: theme.tagBg, borderRadius:"var(--radius-sm)", padding:"4px 10px" }}>
+            <span style={{ fontSize:13, fontWeight:800, color: theme.isDark ? "#D4B8F0" : theme.tagColor, background: theme.tagBg, borderRadius:"var(--radius-sm)", padding:"4px 10px" }}>
               {sym}{Math.round(cost).toLocaleString()}
             </span>
           )}
           <button onClick={(e) => { e.stopPropagation(); Sounds.deleteItem(); onDeleteList(list.id); }}
-            style={{ background: theme.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", border:"none", color: theme.isDark ? "#64748B" : "#C4B9AF", fontSize:13, cursor:"pointer", width:30, height:30, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, transition:"background .12s" }}>✕</button>
+            style={{ background: theme.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", border:"none", color: theme.isDark ? "#B06BE0" : "#C4B9AF", fontSize:13, cursor:"pointer", width:30, height:30, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, transition:"background .12s" }}>✕</button>
         </div>
       </div>
       {total > 0 && (
@@ -1619,7 +1619,7 @@ const ListCard = memo(function ListCard({ list, idx, card, theme, sym, onOpenLis
           <div className="wc-progress-track" style={{ flex:1 }}>
             <div className="wc-progress-fill" style={{ width:`${pct}%` }} />
           </div>
-          <span style={{ fontSize:11, color: theme.isDark ? "#64748B" : "#B0A898", fontWeight:700, flexShrink:0 }}>{done}/{total}</span>
+          <span style={{ fontSize:11, color: theme.isDark ? "#B06BE0" : "#B0A898", fontWeight:700, flexShrink:0 }}>{done}/{total}</span>
         </div>
       )}
     </div>
@@ -1641,11 +1641,11 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
 
   const card = useMemo(() => ({
     background: theme.isDark
-      ? "rgba(30,41,59,0.92)"
+      ? "rgba(45,10,72,0.92)"
       : "rgba(255,255,255,0.94)",
     borderRadius: 22,
     border: theme.isDark
-      ? "1px solid rgba(99,102,241,0.18)"
+      ? "1px solid rgba(91,26,142,0.28)"
       : `1px solid ${theme.border}`,
     boxShadow: theme.isDark
       ? "0 4px 20px rgba(0,0,0,0.35)"
@@ -1660,12 +1660,12 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
         overflow: "hidden",
         borderRadius: "0 0 26px 26px",
         background: themeName === "moon"
-          ? "linear-gradient(160deg, #0F172A 0%, #1e1b4b 100%)"
+          ? "linear-gradient(160deg, #25083F 0%, #3D1465 100%)"
           : themeName === "pink"
           ? "linear-gradient(160deg, #fff0f6 0%, #fce7f3 60%, #fdf2f8 100%)"
           : "linear-gradient(160deg, #f0fdf4 0%, #dcfce7 60%, #ecfdf5 100%)",
         boxShadow: themeName === "moon"
-          ? "0 6px 28px rgba(99,102,241,0.20), 0 1px 0 rgba(129,140,248,0.12)"
+          ? "0 6px 28px rgba(91,26,142,0.35), 0 1px 0 rgba(139,63,200,0.20)"
           : themeName === "pink"
           ? "0 6px 24px rgba(236,72,153,0.12), 0 1px 0 rgba(249,168,212,0.30)"
           : "0 6px 24px rgba(22,163,74,0.10), 0 1px 0 rgba(134,239,172,0.30)",
@@ -1676,7 +1676,7 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
           position:"absolute", top:-28, right:-28,
           width:110, height:110, borderRadius:"50%",
           background: themeName === "moon"
-            ? "radial-gradient(circle, rgba(99,102,241,0.30) 0%, transparent 70%)"
+            ? "radial-gradient(circle, rgba(139,63,200,0.35) 0%, transparent 70%)"
             : themeName === "pink"
             ? "radial-gradient(circle, rgba(244,114,182,0.28) 0%, transparent 70%)"
             : "radial-gradient(circle, rgba(74,222,128,0.28) 0%, transparent 70%)",
@@ -1690,7 +1690,7 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
           position:"absolute", bottom:-22, left:-18,
           width:80, height:80, borderRadius:"50%",
           background: themeName === "moon"
-            ? "radial-gradient(circle, rgba(129,140,248,0.18) 0%, transparent 70%)"
+            ? "radial-gradient(circle, rgba(139,63,200,0.28) 0%, transparent 70%)"
             : themeName === "pink"
             ? "radial-gradient(circle, rgba(251,113,133,0.18) 0%, transparent 70%)"
             : "radial-gradient(circle, rgba(52,211,153,0.20) 0%, transparent 70%)",
@@ -1703,7 +1703,7 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
         <div style={{
           position:"absolute", inset:0, pointerEvents:"none",
           background: themeName === "moon"
-            ? "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)"
+            ? "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%)"
             : themeName === "pink"
             ? "linear-gradient(105deg, transparent 25%, rgba(255,255,255,0.72) 48%, rgba(255,200,230,0.45) 52%, transparent 72%)"
             : "linear-gradient(105deg, transparent 25%, rgba(255,255,255,0.72) 48%, rgba(200,255,220,0.45) 52%, transparent 72%)",
@@ -1735,28 +1735,28 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
           <div style={{
             width:40, height:40, borderRadius:14, flexShrink:0,
             background: themeName === "moon"
-              ? "rgba(99,102,241,0.22)"
+              ? "rgba(91,26,142,0.35)"
               : "rgba(255,255,255,0.85)",
             border:`1.5px solid ${
-              themeName === "moon" ? "rgba(129,140,248,0.28)"
+              themeName === "moon" ? "rgba(139,63,200,0.40)"
               : themeName === "pink" ? "rgba(244,114,182,0.28)"
               : "rgba(74,222,128,0.30)"
             }`,
             display:"flex", alignItems:"center", justifyContent:"center",
             fontSize:19,
             boxShadow: themeName === "moon"
-              ? "0 2px 10px rgba(99,102,241,0.22)"
+              ? "0 2px 10px rgba(91,26,142,0.35)"
               : "0 2px 10px rgba(0,0,0,0.06)",
             animation:"badgePop .4s cubic-bezier(.34,1.56,.64,1) both",
           }}>
-            {themeName === "moon" ? "🌙" : themeName === "pink" ? "🌸" : "🌿"}
+            {themeName === "moon" ? "⚽" : themeName === "pink" ? "🌸" : "🌿"}
           </div>
 
           {/* Text */}
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{
               fontSize:15, fontWeight:900, letterSpacing:"-0.02em", lineHeight:1.2,
-              color: themeName === "moon" ? "#E2E8F0" : themeName === "pink" ? "#9d174d" : "#14532D",
+              color: themeName === "moon" ? "#FFFFFF" : themeName === "pink" ? "#9d174d" : "#14532D",
               animation:"fadeSlideIn .35s ease both",
             }}>
               {lists.length === 0 ? "¡Hola! 👋" : `${lists.length} lista${lists.length!==1?"s":""}`}
@@ -1770,7 +1770,7 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
             </div>
             <div style={{
               fontSize:11, fontWeight:500, marginTop:2,
-              color: themeName === "moon" ? "rgba(165,180,252,0.70)" : themeName === "pink" ? "rgba(157,23,77,0.52)" : "rgba(20,83,45,0.52)",
+              color: themeName === "moon" ? "rgba(212,184,240,0.80)" : themeName === "pink" ? "rgba(157,23,77,0.52)" : "rgba(20,83,45,0.52)",
               animation:"fadeSlideIn .35s .05s ease both",
             }}>
               {lists.length === 0 ? "Crea tu primera lista 🛒" : "Toca una para comprar"}
@@ -1781,22 +1781,22 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
           <div style={{
             display:"flex", alignItems:"center", gap:5,
             background: themeName === "moon"
-              ? "rgba(99,102,241,0.22)"
+              ? "rgba(91,26,142,0.35)"
               : "rgba(255,255,255,0.85)",
             border:`1px solid ${
-              themeName === "moon" ? "rgba(129,140,248,0.22)"
+              themeName === "moon" ? "rgba(139,63,200,0.35)"
               : themeName === "pink" ? "rgba(244,114,182,0.25)"
               : "rgba(74,222,128,0.25)"
             }`,
             borderRadius:22, padding:"5px 12px 5px 9px",
             boxShadow: themeName === "moon"
-              ? "0 2px 10px rgba(99,102,241,0.16)"
+              ? "0 2px 10px rgba(91,26,142,0.28)"
               : "0 2px 10px rgba(0,0,0,0.05)",
             animation:"badgePop .4s .08s cubic-bezier(.34,1.56,.64,1) both",
           }}>
             <span style={{ fontSize:15 }}>🛒</span>
             <span style={{ fontSize:11, fontWeight:800, letterSpacing:"0.02em",
-              color: themeName === "moon" ? "#a5b4fc" : themeName === "pink" ? "#be185d" : "#166534",
+              color: themeName === "moon" ? "#D4B8F0" : themeName === "pink" ? "#be185d" : "#166534",
             }}>Lista</span>
           </div>
         </div>
@@ -1805,7 +1805,7 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
         <div style={{
           height:1,
           background: themeName === "moon"
-            ? "linear-gradient(90deg, transparent, rgba(129,140,248,0.35), transparent)"
+            ? "linear-gradient(90deg, transparent, rgba(139,63,200,0.40), transparent)"
             : themeName === "pink"
             ? "linear-gradient(90deg, transparent, rgba(244,114,182,0.30), transparent)"
             : "linear-gradient(90deg, transparent, rgba(74,222,128,0.30), transparent)",
@@ -1820,8 +1820,8 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
         ))}
 
         {/* ── Create new list — always visible, no modal ── */}
-        <div style={{ ...card, margin:"0 16px 16px", padding:"20px 20px 16px", border: theme.isDark ? "1.5px dashed rgba(129,140,248,0.35)" : `1.5px dashed ${theme.border}` }}>
-          <div style={{ fontSize:13, fontWeight:700, color: theme.isDark ? "#a5b4fc" : theme.tagColor, marginBottom:12, letterSpacing:".01em" }}>✨ Nueva lista</div>
+        <div style={{ ...card, margin:"0 16px 16px", padding:"20px 20px 16px", border: theme.isDark ? "1.5px dashed rgba(139,63,200,0.40)" : `1.5px dashed ${theme.border}` }}>
+          <div style={{ fontSize:13, fontWeight:700, color: theme.isDark ? "#D4B8F0" : theme.tagColor, marginBottom:12, letterSpacing:".01em" }}>✨ Nueva lista</div>
 
           {/* Big input */}
           <div style={{ display:"flex", gap:10, marginBottom:14, alignItems:"center" }}>
@@ -1832,9 +1832,9 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
               onChange={e => setNewName(e.target.value)}
               onKeyDown={e => e.key==="Enter" && handleCreate()}
               placeholder="¿Cómo se llama?"
-              style={{ flex:1, background: theme.isDark ? "rgba(30,41,59,0.7)" : "rgba(255,255,255,0.7)", border: theme.isDark ? "1.5px solid rgba(129,140,248,0.25)" : `1.5px solid ${theme.border}`, borderRadius:14, padding:"13px 16px", color: theme.isDark ? "#E2E8F0" : "#1A2118", fontSize:16, fontWeight:600, outline:"none", boxSizing:"border-box", transition:"border-color .15s" }}
+              style={{ flex:1, background: theme.isDark ? "rgba(45,10,72,0.75)" : "rgba(255,255,255,0.7)", border: theme.isDark ? "1.5px solid rgba(139,63,200,0.35)" : `1.5px solid ${theme.border}`, borderRadius:14, padding:"13px 16px", color: theme.isDark ? "#FFFFFF" : "#1A2118", fontSize:16, fontWeight:600, outline:"none", boxSizing:"border-box", transition:"border-color .15s" }}
               onFocus={e  => e.target.style.borderColor="var(--accent)"}
-              onBlur={e   => e.target.style.borderColor= theme.isDark ? "rgba(129,140,248,0.25)" : theme.border}
+              onBlur={e   => e.target.style.borderColor= theme.isDark ? "rgba(139,63,200,0.35)" : theme.border}
             />
             <button
               onClick={(e) => { ripple(e,"rgba(255,255,255,0.3)"); handleCreate(); }}
@@ -1948,18 +1948,18 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
         <button onClick={() => { Sounds.navBack(); onBack(); }} style={{ background:"none", border:"none", color:"var(--accent)", cursor:"pointer", padding:"4px 8px 4px 0", display:"flex", alignItems:"center", gap:5, borderRadius:10, transition:"opacity .15s" }} onMouseEnter={e=>e.currentTarget.style.opacity=".7"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
           <span style={{ fontSize:20, lineHeight:1, color:"var(--accent)" }}>‹</span>
         </button>
-        <span style={{ flex:1, fontWeight:800, fontSize:18, color: theme.isDark ? "#E2E8F0" : "#1A2118" }}>{list.name}</span>
-        <span style={{ background: theme.isDark ? "rgba(99,102,241,0.18)" : "var(--soft)", borderRadius:"var(--radius-sm,10px)", padding:"3px 10px", fontSize:13, color: theme.isDark ? "#94A3B8" : "var(--accentDark)", fontWeight:600, marginRight:4 }}>{done}/{tot}</span>
+        <span style={{ flex:1, fontWeight:800, fontSize:18, color: theme.isDark ? "#FFFFFF" : "#1A2118" }}>{list.name}</span>
+        <span style={{ background: theme.isDark ? "rgba(91,26,142,0.28)" : "var(--soft)", borderRadius:"var(--radius-sm,10px)", padding:"3px 10px", fontSize:13, color: theme.isDark ? "#D4B8F0" : "var(--accentDark)", fontWeight:600, marginRight:4 }}>{done}/{tot}</span>
 
         {/* ── Budget flip card en el header ── */}
         {editingBudget ? (
-          <div style={{ display:"flex", alignItems:"center", gap:4, background: theme.isDark ? "rgba(99,102,241,0.18)" : "var(--soft)", border:"1.5px solid var(--accent)", borderRadius:22, padding:"0 10px", height:38, animation:"fadeIn .15s ease" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:4, background: theme.isDark ? "rgba(91,26,142,0.28)" : "var(--soft)", border:"1.5px solid var(--accent)", borderRadius:22, padding:"0 10px", height:38, animation:"fadeIn .15s ease" }}>
             <span style={{ color:"var(--accentDark)", fontWeight:900, fontSize:14 }}>{sym}</span>
             <input autoFocus type="number" value={budgetDraft}
               onChange={e => setBudgetDraft(e.target.value)}
               onKeyDown={e => { if(e.key==="Enter") confirmBudgetEdit(); if(e.key==="Escape") setEditingBudget(false); }}
               onBlur={confirmBudgetEdit}
-              style={{ width:52, background:"none", border:"none", color: theme.isDark ? "#E2E8F0" : "#2C2318", fontSize:14, fontWeight:800, outline:"none", textAlign:"right" }}
+              style={{ width:52, background:"none", border:"none", color: theme.isDark ? "#FFFFFF" : "#2C2318", fontSize:14, fontWeight:800, outline:"none", textAlign:"right" }}
               placeholder="0" />
           </div>
         ) : (
@@ -2016,20 +2016,20 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
         {list.items.length===0 && (
           <div style={{ textAlign:"center", padding:"60px 20px" }}>
             <div style={{ fontSize:56, marginBottom:12 }}>🛒</div>
-            <div style={{ fontSize:18, fontWeight:700, color: theme.isDark ? "#E2E8F0" : "#2C2318", marginBottom:6 }}>Tu lista está vacía</div>
-            <div style={{ fontSize:13, color: theme.isDark ? "#94A3B8" : "#9E9285" }}>Toca + Añadir para agregar artículos</div>
+            <div style={{ fontSize:18, fontWeight:700, color: theme.isDark ? "#FFFFFF" : "#2C2318", marginBottom:6 }}>Tu lista está vacía</div>
+            <div style={{ fontSize:13, color: theme.isDark ? "#D4B8F0" : "#9E9285" }}>Toca + Añadir para agregar artículos</div>
           </div>
         )}
-        {searchQuery && all.length===0 && <div style={{ fontSize:13, color: theme.isDark ? "#94A3B8" : "#9E9285", padding:20, textAlign:"center" }}>Sin resultados para "{searchQuery}"</div>}
+        {searchQuery && all.length===0 && <div style={{ fontSize:13, color: theme.isDark ? "#D4B8F0" : "#9E9285", padding:20, textAlign:"center" }}>Sin resultados para "{searchQuery}"</div>}
 
         {/* ── Inventario: header colapsable ── */}
         {inventory.length > 0 && (
           <div style={{ display:"flex", alignItems:"center", padding:"8px 16px 6px", borderBottom: theme.isDark ? "1px solid #1E293B" : "1px solid #F0F2EF" }}>
             <button onClick={() => setShowInventory(v => !v)}
-              style={{ background:"none", border:"none", color: theme.isDark ? "#94A3B8" : "#7A6E5F", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:6, padding:0, fontWeight:700 }}>
+              style={{ background:"none", border:"none", color: theme.isDark ? "#D4B8F0" : "#7A6E5F", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:6, padding:0, fontWeight:700 }}>
               <span style={{ fontSize:11, transition:"transform .2s", display:"inline-block", transform: showInventory ? "rotate(0deg)" : "rotate(-90deg)" }}>▼</span>
               <span>Inventario</span>
-              <span style={{ background: theme.isDark ? "rgba(30,41,59,0.8)" : "#EDE8DF", borderRadius:10, padding:"1px 8px", fontSize:11, color: theme.isDark ? "#94A3B8" : "#8A8075", fontWeight:600 }}>{inventory.length}</span>
+              <span style={{ background: theme.isDark ? "rgba(45,10,72,0.85)" : "#EDE8DF", borderRadius:10, padding:"1px 8px", fontSize:11, color: theme.isDark ? "#D4B8F0" : "#8A8075", fontWeight:600 }}>{inventory.length}</span>
             </button>
           </div>
         )}
@@ -2137,9 +2137,9 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
 
       <div style={Sth.bottomBar}>
         <div style={{ position:"relative", flex:1 }}>
-          <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color: theme.isDark ? "#64748B" : "#9E9285", fontSize:16, pointerEvents:"none" }}>🔍</span>
+          <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color: theme.isDark ? "#B06BE0" : "#9E9285", fontSize:16, pointerEvents:"none" }}>🔍</span>
           <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Buscar en lista..."
-            style={{ width:"100%", background: theme.isDark ? "rgba(30,41,59,0.8)" : "rgba(255,255,255,0.80)", border: theme.isDark ? "1px solid #334155" : `1px solid ${theme?.border||"#D8DDD6"}`, borderRadius:22, padding:"9px 16px 9px 36px", color: theme.isDark ? "#E2E8F0" : "#2C2318", fontSize:14, outline:"none", boxSizing:"border-box" }} />
+            style={{ width:"100%", background: theme.isDark ? "rgba(45,10,72,0.85)" : "rgba(255,255,255,0.80)", border: theme.isDark ? "1px solid #334155" : `1px solid ${theme?.border||"#D8DDD6"}`, borderRadius:22, padding:"9px 16px 9px 36px", color: theme.isDark ? "#FFFFFF" : "#2C2318", fontSize:14, outline:"none", boxSizing:"border-box" }} />
         </div>
       </div>
 
@@ -2288,7 +2288,7 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
           <span style={{ fontSize:18, lineHeight:1 }}>🛍️</span>
           <span style={{
             fontWeight:800, fontSize:17,
-            color: theme.isDark ? "#E2E8F0" : "#1A2118",
+            color: theme.isDark ? "#FFFFFF" : "#1A2118",
             letterSpacing:"-0.01em",
             whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis",
           }}>Agregar artículos</span>
@@ -2322,7 +2322,7 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
           ? "1px solid rgba(255,255,255,0.07)"
           : "1px solid rgba(255,255,255,0.60)",
         background: theme.isDark
-          ? "rgba(15,23,42,0.60)"
+          ? "rgba(37,8,63,0.70)"
           : "rgba(255,255,255,0.52)",
         backdropFilter: "blur(14px) saturate(1.5)",
         WebkitBackdropFilter: "blur(14px) saturate(1.5)",
@@ -2374,10 +2374,10 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
                     padding:"9px 10px",
                     background: isActive
                       ? "linear-gradient(135deg,var(--accent),var(--accentDark))"
-                      : (theme.isDark ? "rgba(30,41,59,0.50)" : "#F0EDE7"),
+                      : (theme.isDark ? "rgba(45,10,72,0.55)" : "#F0EDE7"),
                     border: isActive ? "2px solid var(--accentDark)" : "2px solid transparent",
                     borderRadius:12,
-                    color: isActive ? "#fff" : (theme.isDark ? "#94A3B8" : "#6B5E52"),
+                    color: isActive ? "#fff" : (theme.isDark ? "#D4B8F0" : "#6B5E52"),
                     fontSize:13, fontWeight:700, cursor:"pointer",
                     boxShadow: isActive ? "0 2px 10px rgba(var(--accent-rgb,34,197,94),0.30)" : "none",
                     transition:"all .18s cubic-bezier(0.34,1.2,0.64,1)",
@@ -2422,7 +2422,7 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
         flexShrink:0,
         padding:"10px 16px 6px",
         background: theme.isDark
-          ? "rgba(15,23,42,0.45)"
+          ? "rgba(37,8,63,0.60)"
           : "rgba(255,255,255,0.30)",
         backdropFilter: "blur(10px)",
         WebkitBackdropFilter: "blur(10px)",
@@ -2430,11 +2430,11 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍  Buscar artículo..."
           style={{
             width:"100%",
-            background: theme.isDark ? "rgba(15,23,42,0.70)" : "rgba(255,255,255,0.82)",
+            background: theme.isDark ? "rgba(37,8,63,0.78)" : "rgba(255,255,255,0.82)",
             border: `1.5px solid ${theme.isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.90)"}`,
             borderRadius:99,
             padding:"11px 18px",
-            color: theme.isDark ? "#E2E8F0" : "#1A2118",
+            color: theme.isDark ? "#FFFFFF" : "#1A2118",
             fontSize:14, fontWeight:500, outline:"none", boxSizing:"border-box",
             transition:"border-color .15s, box-shadow .15s",
             boxShadow: theme.isDark
@@ -2451,7 +2451,7 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
         padding:"6px 16px 10px",
         scrollbarWidth:"none",
         background: theme.isDark
-          ? "rgba(15,23,42,0.40)"
+          ? "rgba(37,8,63,0.55)"
           : "rgba(255,255,255,0.26)",
         backdropFilter: "blur(8px)",
         WebkitBackdropFilter: "blur(8px)",
@@ -2465,7 +2465,7 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
           <button key={cat} onClick={() => setCategory(cat)}
             style={{ borderRadius:99, border:"none", padding:"5px 12px 5px 6px", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0, display:"flex", alignItems:"center", gap:5,
               background: category===cat ? "var(--accent)" : theme.isDark ? "color-mix(in srgb, white 7%, var(--cardBg))" : theme.tagBg,
-              color: category===cat ? "#fff" : theme.isDark ? "#94A3B8" : theme.tagColor,
+              color: category===cat ? "#fff" : theme.isDark ? "#D4B8F0" : theme.tagColor,
               transition:"background .12s, color .12s, transform .1s",
               boxShadow: category===cat ? `0 2px 10px ${theme.pillBorder}` : "none",
             }}
@@ -2487,9 +2487,9 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
       }}>
         {filtered.length===0 ? (
           <div style={{
-            fontSize:14, color: theme.isDark ? "#6279C8" : "#B0A898",
+            fontSize:14, color: theme.isDark ? "#B06BE0" : "#B0A898",
             padding:"32px 20px", textAlign:"center",
-            background: theme.isDark ? "rgba(15,23,42,0.55)" : "rgba(255,255,255,0.52)",
+            background: theme.isDark ? "rgba(37,8,63,0.65)" : "rgba(255,255,255,0.52)",
             backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)",
             borderRadius:20,
             border: theme.isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(255,255,255,0.75)",
@@ -2529,7 +2529,7 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
                   boxShadow: theme.isDark
                     ? "0 1px 8px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.04)"
                     : "0 1px 6px rgba(80,60,20,0.05), inset 0 1px 0 rgba(255,255,255,0.80)",
-                  cursor:"pointer", color: theme.isDark ? "#E2E8F0" : theme.textPrimary,
+                  cursor:"pointer", color: theme.isDark ? "#FFFFFF" : theme.textPrimary,
                   textAlign:"left",
                   transition:"background .13s ease, transform .12s cubic-bezier(0.34,1.3,0.64,1), box-shadow .13s ease",
                   boxSizing:"border-box",
@@ -2552,7 +2552,7 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
 
                 {/* Name + category */}
                 <div style={{ flex:1, minWidth:0 }}>
-                  <span style={{ display:"block", fontSize:14, fontWeight:700, letterSpacing:"-0.01em", color: theme.isDark ? "#E8EDF3" : theme.textPrimary }}>{p.name}</span>
+                  <span style={{ display:"block", fontSize:14, fontWeight:700, letterSpacing:"-0.01em", color: theme.isDark ? "#FFFFFF" : theme.textPrimary }}>{p.name}</span>
                   <span style={{ fontSize:11, color:"var(--accent)", fontWeight:600, opacity:0.80, letterSpacing:"0.01em" }}>{p.category}</span>
                 </div>
 
@@ -2563,13 +2563,13 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
                     onChange={e => setTempPresetPrice(e.target.value)}
                     onBlur={() => savePresetPrice(p.name)}
                     onKeyDown={e => e.key==="Enter" && savePresetPrice(p.name)}
-                    style={{ width:76, background: theme.isDark ? "#1E2A5E" : "#FEFCF9", border:"1.5px solid var(--accent)", borderRadius:10, color:"var(--accentDark)", fontSize:12, fontWeight:800, padding:"4px 8px", textAlign:"right", outline:"none", flexShrink:0 }} />
+                    style={{ width:76, background: theme.isDark ? "#2D0A48" : "#FEFCF9", border:"1.5px solid var(--accent)", borderRadius:10, color:"var(--accentDark)", fontSize:12, fontWeight:800, padding:"4px 8px", textAlign:"right", outline:"none", flexShrink:0 }} />
                 ) : (
                   <button
                     onClick={(e) => { e.stopPropagation(); setEditingPresetPrice(p.name); setTempPresetPrice(overridden !== undefined ? overridden : (crp ? String(crp) : "")); }}
                     style={{
                       fontSize:11, fontWeight:800,
-                      color: theme.isDark ? "#a5b4fc" : theme.tagColor,
+                      color: theme.isDark ? "#D4B8F0" : theme.tagColor,
                       background: priceBg,
                       border: `1px solid ${cardBorder}`,
                       borderRadius:10, padding:"4px 9px",
@@ -2745,7 +2745,7 @@ function genInsight({ sessions, budgetNum, sym, period }) {
   if (trend < -avg * 0.15)
     return { icon: "📉", text: `Tus últimas 3 compras están bajando. ¡Buen control del gasto!`, color: "var(--accent)" };
   if (topItem && topItem[1] >= 3)
-    return { icon: "🔁", text: `"${topItem[0]}" aparece ${topItem[1]}× en este período — tu ítem más recurrente.`, color: "#a5b4fc" };
+    return { icon: "🔁", text: `"${topItem[0]}" aparece ${topItem[1]}× en este período — tu ítem más recurrente.`, color: "#D4B8F0" };
   if (freq_per_week && parseFloat(freq_per_week) >= 2)
     return { icon: "🛒", text: `Comprás unas ${freq_per_week}× por semana. Agrupar visitas puede ahorrarte tiempo y plata.`, color: "#fcd34d" };
   if (last > avg * 1.3)
@@ -3227,7 +3227,7 @@ function StatsView({ history, budget, sym }) {
 
 
 // ── Theme tokens ──────────────────────────────────────────────────────────────
-// Green: Pistachio palette  |  Pink: Blush/petal palette  |  Moon: Blueberry palette
+// Green: Pistachio palette  |  Pink: Blush/petal palette  |  Moon: Saprissa purple palette
 const THEMES = {
   green: {
     // Pistachio cream palette
@@ -3289,33 +3289,34 @@ const THEMES = {
     accentRgb:   "212,96,122",
   },
   moon: {
-    // Blueberry palette
-    checkerBg:   "#151A35",          // Blueberry Black — deep base
-    checker:     "#273F8A",          // Indigo Berry — gingham tile
-    accent:      "#6279C8",          // Periwinkle Blue — primary
-    accentDark:  "#4F73C7",          // Cornflower Blue
-    accentLight: "#7298D9",          // Blueberry Bloom
-    soft:        "#1C285E",          // Midnight Blue surface
-    border:      "#315CB4",          // Sapphire Blue border
-    surface:     "#1E2A5E",
-    cardBg:      "#222A52",
-    cardBorder:  "#3A4670",
-    tagBg:       "#2A3460",
-    tagColor:    "#C8D7E8",
-    pillBg:      "#2C3868",
-    pillBorder:  "#4C5C92",
-    ginghamTile: "#28335E",
-    ginghamBg:   "#151A35",
-    daisyColor:  "%23C8D7E8",        // Ice Crystal Blue (URL encoded)
-    dashColor:   "#2A3450",
-    textPrimary: "#E8EDF3",          // Arctic Mist
-    textMuted:   "#9CC4F2",          // Glacier Blue
-    headerBg:    "#151A35",
-    navBg:       "#13182F",
-    sheetBg:     "#11152B",
-    label:       "🌙",
+    // ── Saprissa palette ──────────────────────────────────────────────
+    // Morado domina todo. Blanco puro + negro profundo como únicos apoyos.
+    checkerBg:   "#25083F",          // Morado Profundo — base absoluta
+    checker:     "#3D1465",          // Morado Oscuro — tile de patrón
+    accent:      "#8B3FC8",          // Morado Saprissa — acción principal
+    accentDark:  "#5B1A8E",          // Morado Principal — acento profundo
+    accentLight: "#B06BE0",          // Morado Claro — hover / highlight
+    soft:        "#2D0E50",          // Superficie morada oscura
+    border:      "#5B1A8E",          // Borde morado principal
+    surface:     "#3D1465",
+    cardBg:      "#2D0A48",
+    cardBorder:  "#5B1A8E",
+    tagBg:       "#3D1465",
+    tagColor:    "#F0E6FF",          // Lavanda muy claro — texto sobre morado
+    pillBg:      "#3D1465",
+    pillBorder:  "#8B3FC8",
+    ginghamTile: "#3D1465",
+    ginghamBg:   "#25083F",
+    daisyColor:  "%23E8D5FF",        // Lavanda (URL encoded) — pétalo sobre fondo oscuro
+    dashColor:   "#3D1465",
+    textPrimary: "#FFFFFF",          // Blanco puro — máximo contraste
+    textMuted:   "#D4B8F0",          // Lavanda suave — texto secundario
+    headerBg:    "#111111",          // Negro profundo — cabecera
+    navBg:       "#111111",          // Negro profundo — nav inferior
+    sheetBg:     "#1A0030",          // Morado casi negro — sheets
+    label:       "⚽",
     isDark:      true,
-    accentRgb:   "98,121,200",
+    accentRgb:   "139,63,200",
   },
 };
 
@@ -3391,18 +3392,18 @@ input, select, button { font-family: inherit; }
   --bg-daisy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Cg transform='translate(40,40) rotate(-14)'%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23FFFAFC' opacity='0.97' transform='rotate(0)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23FFFAFC' opacity='0.97' transform='rotate(40)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23FFFAFC' opacity='0.97' transform='rotate(80)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23FFFAFC' opacity='0.97' transform='rotate(120)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23FFFAFC' opacity='0.97' transform='rotate(160)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23FFFAFC' opacity='0.97' transform='rotate(200)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23FFFAFC' opacity='0.97' transform='rotate(240)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23FFFAFC' opacity='0.97' transform='rotate(280)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23FFFAFC' opacity='0.97' transform='rotate(320)'/%3E%3Ccircle cx='0' cy='0' r='7' fill='%23F0A0B8'/%3E%3Ccircle cx='0' cy='0' r='4' fill='%23D4607A' opacity='0.50'/%3E%3C/g%3E%3C/svg%3E");
 }
 
-/* ── Background token overrides: 🌙 Blueberry ──────────────────────── */
+/* ── Background token overrides: ⚽ Saprissa ────────────────────────── */
 [data-theme="moon"] {
-  --bg-base:       #151A35;  /* Blueberry Black */
+  --bg-base:       #25083F;  /* Morado Profundo — base Saprissa */
   --bg-wallpaper:  url("${bgPurple}");
-  --bg-band:       rgba(79,115,199,0.18);   /* Cornflower Blue gingham */
-  --bg-seam:       rgba(156,196,242,0.14);  /* Glacier Blue seam */
-  --bg-bloom1:     rgba(28,40,94,0.80);     /* Midnight Blue top */
-  --bg-bloom2:     rgba(98,121,200,0.10);   /* Periwinkle glow bottom */
+  --bg-band:       rgba(91,26,142,0.35);    /* Morado Principal gingham */
+  --bg-seam:       rgba(255,255,255,0.08);  /* Seam blanco muy sutil */
+  --bg-bloom1:     rgba(37,8,63,0.92);      /* Morado profundo arriba */
+  --bg-bloom2:     rgba(139,63,200,0.12);   /* Glow morado abajo */
   --bg-bloom1-pos: 75% 5%;
   --bg-bloom2-pos: 12% 92%;
-  /* daisy SVG — blueberry: Ice Crystal Blue petals, Periwinkle center */
-  --bg-daisy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Cg transform='translate(40,40) rotate(8)'%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23C8D7E8' opacity='0.20' transform='rotate(0)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23C8D7E8' opacity='0.20' transform='rotate(40)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23C8D7E8' opacity='0.20' transform='rotate(80)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23C8D7E8' opacity='0.20' transform='rotate(120)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23C8D7E8' opacity='0.20' transform='rotate(160)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23C8D7E8' opacity='0.20' transform='rotate(200)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23C8D7E8' opacity='0.20' transform='rotate(240)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23C8D7E8' opacity='0.20' transform='rotate(280)'/%3E%3Cellipse cx='0' cy='-13' rx='4.5' ry='8.5' fill='%23C8D7E8' opacity='0.20' transform='rotate(320)'/%3E%3Ccircle cx='0' cy='0' r='7' fill='%236279C8' opacity='0.45'/%3E%3Ccircle cx='0' cy='0' r='4' fill='%234F73C7' opacity='0.30'/%3E%3C/g%3E%3C/svg%3E");
+  /* Geometric SVG — Saprissa: rectángulos morados, no daisies */
+  --bg-daisy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect x='32' y='32' width='16' height='16' fill='%238B3FC8' opacity='0.18' rx='2'/%3E%3Crect x='28' y='28' width='24' height='24' fill='none' stroke='%235B1A8E' stroke-width='1.5' opacity='0.25' rx='3'/%3E%3C/svg%3E");
 }
 
 /* ── SINGLE body rule — reads vars, works for ALL three themes ──────── */
@@ -3421,15 +3422,12 @@ body {
   transition: background-color 0.55s ease, background-image 0.55s ease;
 }
 
-/* Moon dark text override — already in vars but ensure body picks it up.
-   The purple wallpaper art is a light pastel pattern, so a dark scrim is
-   layered on top of it here (not baked into the image) to keep the
-   theme's light text readable — same wallpaper file, no separate dark
-   asset needed. */
+/* Saprissa — overlay morado profundo sobre el wallpaper para
+   mantener el texto blanco legible y reforzar la identidad cromática. */
 [data-theme="moon"] body {
-  color: #E8EDF3;
+  color: #FFFFFF;
   background-image:
-    linear-gradient(rgba(10,12,28,0.78), rgba(10,12,28,0.82)),
+    linear-gradient(rgba(17,0,34,0.82), rgba(37,8,63,0.88)),
     var(--bg-wallpaper);
 }
 
@@ -3459,14 +3457,14 @@ body {
 .list-card { margin:8px 16px; padding:16px 18px; animation: cardIn 0.38s var(--ease-spring) both; }
 .list-card:active { transform:scale(0.975); box-shadow:0 1px 8px rgba(0,0,0,0.05); }
 
-/* ── Moon card overrides */
+/* ── Saprissa card overrides */
 [data-theme="moon"] .wc-card,
 [data-theme="moon"] .list-card {
   background: var(--cardBg);
   border-color: var(--cardBorder);
   box-shadow:
-    0 4px 24px rgba(0,0,0,0.35),
-    0 1px 4px  rgba(0,0,0,0.25);
+    0 4px 28px rgba(91,26,142,0.40),
+    0 1px 4px  rgba(0,0,0,0.40);
 }
 
 /* ── Item rows ─────────────────────────────────────────────────────── */
@@ -3482,8 +3480,8 @@ body {
 .wc-item-row:active { transform:scale(0.997); }
 
 [data-theme="moon"] .wc-item-row {
-  background: #1E2A5E;
-  border-color: #2C3868;
+  background: #2D0A48;
+  border-color: #5B1A8E;
 }
 
 /* ── Buttons ────────────────────────────────────────────────────────── */
@@ -3510,9 +3508,9 @@ body {
 .wc-btn-ghost:active { background:#FFFFFF; transform:scale(0.97); }
 
 [data-theme="moon"] .wc-btn-ghost {
-  background: #1E2A5E;
-  border-color: #4C5C92;
-  color: #9CC4F2;
+  background: #3D1465;
+  border-color: #8B3FC8;
+  color: #D4B8F0;
 }
 
 /* ── Inputs ─────────────────────────────────────────────────────────── */
@@ -3533,10 +3531,10 @@ body {
 .wc-input::placeholder { color:var(--textMuted); font-style:italic; opacity:0.7; }
 
 [data-theme="moon"] .wc-input {
-  background: #1E2A5E; border-color: #3A4670; color:#E8EDF3;
+  background: #3D1465; border-color: #8B3FC8; color:#FFFFFF;
 }
-[data-theme="moon"] .wc-input:focus { background:#243460; }
-[data-theme="moon"] .wc-input::placeholder { color:#6279C8; }
+[data-theme="moon"] .wc-input:focus { background:#4A1A78; }
+[data-theme="moon"] .wc-input::placeholder { color:#8B3FC8; }
 
 /* ── Header / Nav bars ─────────────────────────────────────────────── */
 .wc-header {
@@ -3559,7 +3557,7 @@ body {
 }
 
 [data-theme="moon"] .wc-header,
-[data-theme="moon"] .wc-bottom-nav { border-color:#3A4670; }
+[data-theme="moon"] .wc-bottom-nav { border-color:#5B1A8E; }
 
 /* ── Bottom Sheet / Modal ─────────────────────────────────────────── */
 .wc-sheet {
@@ -3570,9 +3568,9 @@ body {
 }
 
 [data-theme="moon"] .wc-sheet {
-  background:#11152B;
-  border-color:#3A4670;
-  box-shadow:0 -10px 48px rgba(0,0,0,0.50);
+  background:#1A0030;
+  border-color:#5B1A8E;
+  box-shadow:0 -10px 48px rgba(0,0,0,0.60);
 }
 
 /* ── Chips / Tags ──────────────────────────────────────────────────── */
@@ -4206,13 +4204,13 @@ export default function SuperLista() {
       {/* ── Theme toggle pill ── */}
       <button
         onClick={(e) => { Sounds.themeToggle(); ripple(e, "rgba(255,255,255,0.4)"); toggleTheme(); }}
-        title={themeName === "green" ? "Cambiar a rosa 🌸" : themeName === "pink" ? "Cambiar a modo luna 🌙" : "Cambiar a verde 🌿"}
+        title={themeName === "green" ? "Cambiar a rosa 🌸" : themeName === "pink" ? "Cambiar a Saprissa ⚽" : "Cambiar a verde 🌿"}
         style={{
           position:"fixed", bottom:90, right:16, zIndex:50,
           background: themeName === "green"
             ? "linear-gradient(135deg,#f9a8d4,#ec4899)"
             : themeName === "pink"
-            ? "linear-gradient(135deg,#818cf8,#6366f1)"
+            ? "linear-gradient(135deg,#8B3FC8,#5B1A8E)"
             : "linear-gradient(135deg,#86efac,#22c55e)",
           border:"none", borderRadius:100,
           width:44, height:44,
@@ -4226,7 +4224,7 @@ export default function SuperLista() {
         onTouchStart={e => { e.currentTarget.style.transform="scale(.86)"; }}
         onTouchEnd={e   => { e.currentTarget.style.transform="scale(1)"; }}
       >
-        {themeName === "green" ? "🌸" : themeName === "pink" ? "🌙" : "🌿"}
+        {themeName === "green" ? "🌸" : themeName === "pink" ? "⚽" : "🌿"}
       </button>
       <div style={Sd.app}>
         {(view==="lists" || view==="stats") && (

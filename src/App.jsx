@@ -4016,41 +4016,6 @@ export default function SuperLista() {
     document.head.appendChild(el);
   }, []);
 
-  // Inject dynamic CSS vars into <head> — keyed on theme so it only runs when
-  // the theme actually changes, never on unrelated state updates (lists, view, etc.).
-  useEffect(() => {
-    let el = document.getElementById("sl-theme-vars");
-    if (!el) {
-      el = document.createElement("style");
-      el.id = "sl-theme-vars";
-      document.head.appendChild(el);
-    }
-    el.textContent = `
-      :root {
-        --accent:      ${theme.accent};
-        --accentDark:  ${theme.accentDark};
-        --accentLight: ${theme.accentLight || theme.accent};
-        --soft:        ${theme.soft};
-        --border:      ${theme.border};
-        --cardBg:      ${theme.cardBg};
-        --cardBorder:  ${theme.cardBorder};
-        --textPrimary: ${theme.textPrimary};
-        --textMuted:   ${theme.textMuted};
-        --navBg:       ${theme.navBg};
-        --headerBg:    ${theme.headerBg};
-        --sheetBg:     ${theme.sheetBg};
-        --pillBg:      ${theme.pillBg};
-        --pillBorder:  ${theme.pillBorder};
-        --tagBg:       ${theme.tagBg};
-        --tagColor:    ${theme.tagColor};
-        --accent-rgb:  ${theme.accentRgb || "94,171,47"};
-        --bottombar-h: calc(64px + env(safe-area-inset-bottom, 0px));
-      }
-      .flip-card-front { background:${theme.soft}; border:1px solid ${theme.border}; }
-      .flip-card-back  { background:${theme.soft}; border:1px solid ${theme.border}; transform:rotateY(180deg); }
-    `;
-  }, [theme]);
-
     const listsWriteTimer = useRef(null);
   useEffect(() => {
     // Debounce — checked items fire many rapid state updates; batch the write
@@ -4169,6 +4134,46 @@ export default function SuperLista() {
   }, []); // empty deps: register once on mount, read state via ref
 
   const theme = useMemo(() => THEMES[themeName], [themeName]);
+
+  // Inject dynamic CSS vars into <head> — keyed on theme so it only runs when
+  // the theme actually changes, never on unrelated state updates (lists, view, etc.).
+  // NOTA: este efecto debe vivir después de `const theme` — antes estaba ~150
+  // líneas arriba, ejecutándose antes de que `theme` existiera en este scope,
+  // lo cual causaba un ReferenceError (temporal dead zone) y dejaba la pantalla
+  // en negro al entrar a la app.
+  useEffect(() => {
+    let el = document.getElementById("sl-theme-vars");
+    if (!el) {
+      el = document.createElement("style");
+      el.id = "sl-theme-vars";
+      document.head.appendChild(el);
+    }
+    el.textContent = `
+      :root {
+        --accent:      ${theme.accent};
+        --accentDark:  ${theme.accentDark};
+        --accentLight: ${theme.accentLight || theme.accent};
+        --soft:        ${theme.soft};
+        --border:      ${theme.border};
+        --cardBg:      ${theme.cardBg};
+        --cardBorder:  ${theme.cardBorder};
+        --textPrimary: ${theme.textPrimary};
+        --textMuted:   ${theme.textMuted};
+        --navBg:       ${theme.navBg};
+        --headerBg:    ${theme.headerBg};
+        --sheetBg:     ${theme.sheetBg};
+        --pillBg:      ${theme.pillBg};
+        --pillBorder:  ${theme.pillBorder};
+        --tagBg:       ${theme.tagBg};
+        --tagColor:    ${theme.tagColor};
+        --accent-rgb:  ${theme.accentRgb || "94,171,47"};
+        --bottombar-h: calc(64px + env(safe-area-inset-bottom, 0px));
+      }
+      .flip-card-front { background:${theme.soft}; border:1px solid ${theme.border}; }
+      .flip-card-back  { background:${theme.soft}; border:1px solid ${theme.border}; transform:rotateY(180deg); }
+    `;
+  }, [theme]);
+
   const toggleTheme = useCallback(() => {
     setThemeName(t => t === "green" ? "pink" : t === "pink" ? "moon" : "green");
   }, []);

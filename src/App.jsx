@@ -397,7 +397,7 @@ const makeStyles = (theme) => ({
   app: {
     maxWidth: 430, margin: "0 auto", height: "100svh",
     background: "transparent", display: "flex", flexDirection: "column",
-    fontFamily: "'Nunito', 'DM Sans', 'Segoe UI', sans-serif",
+    fontFamily: "'Buycat', cursive",
     color: theme.isDark ? theme.textPrimary : "#1A2118",
     isolation: "isolate", overflow: "hidden",
   },

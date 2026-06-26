@@ -566,70 +566,70 @@ body::after {
     radial-gradient(ellipse at 20% 80%, rgba(210,175,210,0.10) 0%, transparent 50%);
 }
 
-/* ── Theme: Moon (Dark) ───────────────────────────────────────────── */
+/* ── Theme: Saprissa (Dark Purple) ───────────────────────────────── */
 [data-theme="moon"] {
-  --wc-paper:     #0F172A;
-  --wc-ink:       #E2E8F0;
-  --wc-ink-muted: #94A3B8;
-  --wc-ink-faint: #475569;
-  --accent:     #818CF8;
-  --accentDark: #6366F1;
-  --soft:       #1E293B;
-  --border:     #334155;
-  --accent-rgb: 129, 140, 248;
-  --card-dot-rgb: 129,140,248;
-  --checkerBg:  #0F172A;
+  --wc-paper:     #25083F;
+  --wc-ink:       #FFFFFF;
+  --wc-ink-muted: #D4B8F0;
+  --wc-ink-faint: #8B3FC8;
+  --accent:     #8B3FC8;
+  --accentDark: #5B1A8E;
+  --soft:       #3D1465;
+  --border:     #5B1A8E;
+  --accent-rgb: 139, 63, 200;
+  --card-dot-rgb: 139,63,200;
+  --checkerBg:  #25083F;
 }
 
 [data-theme="moon"] body {
-  background-color: #0F172A;
+  background-color: #25083F;
   background-image:
     repeating-linear-gradient(
       0deg,
       transparent,
       transparent 31px,
-      rgba(100,116,139,0.07) 31px,
-      rgba(100,116,139,0.07) 32px
+      rgba(91,26,142,0.10) 31px,
+      rgba(91,26,142,0.10) 32px
     ),
-    radial-gradient(ellipse at 70% 20%, rgba(99,102,241,0.06) 0%, transparent 55%),
-    radial-gradient(ellipse at 20% 80%, rgba(59,130,246,0.05) 0%, transparent 50%);
+    radial-gradient(ellipse at 70% 20%, rgba(139,63,200,0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 20% 80%, rgba(37,8,63,0.60) 0%, transparent 50%);
 }
 
 [data-theme="moon"] .list-card,
 [data-theme="moon"] .wc-card,
 [data-theme="moon"] .wc-item-row {
-  background: #1E293B;
-  border-color: #334155;
+  background: #2D0A48;
+  border-color: #5B1A8E;
 }
 
 [data-theme="moon"] .wc-header,
 [data-theme="moon"] .wc-bottom-nav {
-  background: #0F172A;
-  border-color: #334155;
+  background: #111111;
+  border-color: #5B1A8E;
 }
 
 [data-theme="moon"] .wc-sheet {
-  background: #0F172A;
+  background: #1A0030;
 }
 
 [data-theme="moon"] .wc-input {
-  background: #1E293B;
-  border-color: #475569;
-  color: #E2E8F0;
+  background: #3D1465;
+  border-color: #8B3FC8;
+  color: #FFFFFF;
 }
 
 [data-theme="moon"] .wc-input:focus {
-  background: #243248;
+  background: #4A1A78;
 }
 
 [data-theme="moon"] .wc-input::placeholder {
-  color: #475569;
+  color: #8B3FC8;
 }
 
 [data-theme="moon"] .wc-btn-ghost {
-  background: #1E293B;
-  border-color: #475569;
-  color: #94A3B8;
+  background: #3D1465;
+  border-color: #8B3FC8;
+  color: #D4B8F0;
 }
 
 /* ── Animations ───────────────────────────────────────────────────── */

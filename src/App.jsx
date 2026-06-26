@@ -4139,7 +4139,11 @@ export default function SuperLista() {
 
   // ── Supabase cloud sync — mirrors every LS write to the cloud ─────────────
   // localStorage stays as the instant read/write cache; Supabase is the
-  // persistent layer that survives app reinstalls and enables future multi-device sync.
+  // persistent layer that survives app reinstalls. Si el dispositivo está
+  // unido a un código de hogar (ver hooks/householdId.js), esto también
+  // sincroniza con los demás dispositivos del hogar vía polling cada pocos
+  // segundos (no Realtime, para evitar cualquier costo de conexión WebSocket
+  // con varios usuarios activos).
   useSupabaseSync("sl_lists",    lists,    setLists,    DEFAULT_LISTS);
   useSupabaseSync("sl_profile",  profile,  setProfile,  { name:"", budget:"" });
   useSupabaseSync("sl_settings", settings, setSettings, { currencyCode:"CRC" });

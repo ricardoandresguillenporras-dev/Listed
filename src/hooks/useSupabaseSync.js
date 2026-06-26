@@ -28,6 +28,9 @@ async function cloudRead(table) {
   return data?.data ?? null;
 }
 
+// Tiempo entre cada consulta de "¿hay algo nuevo?" por tabla.
+const POLL_INTERVAL_MS = 6000;
+
 // ── useSupabaseSync ───────────────────────────────────────────────────────────
 // Drop-in layer over an existing React state value.
 //
@@ -40,10 +43,11 @@ async function cloudRead(table) {
 //      as the existing LS debounce so they stay in sync).
 //   3. Writes are fire-and-forget; failures are logged but never crash the app.
 //   4. Works offline — LS is still written first, cloud syncs when available.
-//   5. Realtime: se suscribe a cambios en la fila de este SYNC_ID — si otro
-//      dispositivo (mismo código de hogar) escribe, este recibe el cambio al
-//      instante sin necesidad de recargar la app. Esto es lo que hace que
-//      varias personas vean la lista actualizada en vivo entre ellas.
+//   5. Polling: cada POLL_INTERVAL_MS este dispositivo pregunta "¿hay algo
+//      nuevo?" con un select normal — NO usa el servicio Realtime de Supabase
+//      (sin conexión WebSocket persistente), así que no cuenta contra esa
+//      cuota. A cambio, los cambios de otros dispositivos tardan hasta
+//      POLL_INTERVAL_MS en aparecer, en vez de ser instantáneos.
 //
 // LIMITACIÓN CONOCIDA — sin merge fino: cada escritura sube el documento
 // COMPLETO (todas las listas, todo el perfil, etc., según la tabla). Si dos
@@ -57,7 +61,7 @@ export function useSupabaseSync(table, value, setValue, defaultValue) {
   const hasMounted   = useRef(false);
   const writeTimer   = useRef(null);
   const latestValue  = useRef(value);
-  const lastWriteAt  = useRef(0); // para ignorar el eco de nuestra propia escritura via Realtime
+  const lastWriteAt  = useRef(0); // para ignorar el propio polling justo después de escribir
 
   // Keep ref current so the debounced write always serialises the latest value.
   useEffect(() => { latestValue.current = value; }, [value]);
@@ -92,25 +96,31 @@ export function useSupabaseSync(table, value, setValue, defaultValue) {
     return () => clearTimeout(writeTimer.current);
   }, [value, debouncedWrite]);
 
-  // ── Realtime: escuchar cambios de OTROS dispositivos en la misma fila ──────
+  // ── Polling: preguntar periódicamente si OTRO dispositivo cambió la fila ───
+  // Usa select normal (REST), no Realtime — cero conexiones WebSocket, cero
+  // uso de la cuota de Realtime de Supabase.
   useEffect(() => {
-    const channel = supabase
-      .channel(`sync-${table}-${SYNC_ID}`)
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table, filter: `device_id=eq.${SYNC_ID}` },
-        (payload) => {
-          // Ignorar el eco de nuestra propia escritura reciente (< 1.5s) — si no,
-          // cada vez que este mismo dispositivo escribe, Realtime le devolvería
-          // su propio cambio y forzaría un re-render innecesario (o, peor, una
-          // carrera contra un cambio local más nuevo que el usuario ya hizo).
-          if (Date.now() - lastWriteAt.current < 1500) return;
-          const incoming = payload.new?.data;
-          if (incoming !== undefined) setValue(incoming);
-        }
-      )
-      .subscribe();
+    let cancelled = false;
+    const poll = setInterval(async () => {
+      if (cancelled || !hasMounted.current) return;
+      // Si este mismo dispositivo acaba de escribir hace poco, nos saltamos
+      // este ciclo — evita pisar una edición local muy reciente con el eco
+      // de nuestra propia escritura, o una carrera contra el siguiente cambio
+      // que el usuario ya esté haciendo.
+      if (Date.now() - lastWriteAt.current < POLL_INTERVAL_MS) return;
 
-    return () => { supabase.removeChannel(channel); };
+      const remote = await cloudRead(table);
+      if (cancelled || remote === null) return;
+
+      // Comparación simple por contenido — solo actualiza el estado si la
+      // data remota es realmente distinta de lo que ya tenemos, para no
+      // forzar re-renders ni animaciones innecesarias cada 6 segundos.
+      const remoteStr = JSON.stringify(remote);
+      const localStr  = JSON.stringify(latestValue.current);
+      if (remoteStr !== localStr) setValue(remote);
+    }, POLL_INTERVAL_MS);
+
+    return () => { cancelled = true; clearInterval(poll); };
   }, [table, setValue]);
 }
 

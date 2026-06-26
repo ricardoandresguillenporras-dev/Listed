@@ -397,7 +397,7 @@ const makeStyles = (theme) => ({
   app: {
     maxWidth: 430, margin: "0 auto", height: "100svh",
     background: "transparent", display: "flex", flexDirection: "column",
-    fontFamily: "'Buycat', cursive",
+    fontFamily: "'MeltSwashes', cursive",
     color: theme.isDark ? theme.textPrimary : "#1A2118",
     isolation: "isolate", overflow: "hidden",
   },
@@ -949,7 +949,7 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
         transition: "background .20s ease, backdrop-filter .20s ease",
       }}
       onClick={(e) => e.target===e.currentTarget && requestClose()}>
-      <div ref={sheetRef} className="wc-sheet" style={{ width:"100%", maxWidth:430, animation: closing ? "none" : "slideUp .28s cubic-bezier(.34,1.2,.64,1)", maxHeight:"90vh", overflow:"hidden", display:"flex", flexDirection:"column" }}>
+      <div ref={sheetRef} className="wc-sheet" style={{ width:"100%", maxWidth:430, animation: closing ? "none" : "slideUp .28s cubic-bezier(.34,1.2,.64,1)", maxHeight:"90vh", overflow:"hidden", display:"flex", flexDirection:"column", fontFamily:"'MeltSwashes', cursive" }}>
         <SheetHandle handleProps={handleProps} />
         <div style={{ display:"flex", alignItems:"center", padding:"16px 20px 0", justifyContent:"space-between" }}>
           <div style={{ width:44, height:44, borderRadius:14, background:"var(--soft)", border:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"center" }}>

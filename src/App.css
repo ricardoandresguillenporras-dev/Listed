@@ -3,10 +3,10 @@
    Inspired by botanical watercolor tutorials (svetlana_e_art style)
    ═══════════════════════════════════════════════════════════════════ */
 
-/* ── Buycat — self-hosted, place Buycat.ttf in src/assets/fonts/ ──── */
+/* ── Melt Swashes — self-hosted ──────────────────────────────────── */
 @font-face {
-  font-family: 'Buycat';
-  src: url('./assets/fonts/Buycat.ttf') format('truetype');
+  font-family: 'MeltSwashes';
+  src: url('./assets/fonts/Melt-Swashes.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -41,10 +41,10 @@
   --wc-olive:       #8B9E5A;
   --wc-sienna:      #B87344;
 
-  /* Typography — all roles use Buycat */
-  --font-hand:   'Buycat', cursive;
-  --font-body:   'Buycat', cursive;
-  --font-serif:  'Buycat', cursive;
+  /* Typography — all roles use MeltSwashes */
+  --font-hand:   'MeltSwashes', cursive;
+  --font-body:   'MeltSwashes', cursive;
+  --font-serif:  'MeltSwashes', cursive;
 
   /* Spacing & radii */
   --radius-sm:  10px;
@@ -63,10 +63,10 @@
   --textMuted:   var(--wc-ink-muted);
 }
 
-/* ── Universal Buycat override — covers inline JSX style objects ──── */
+/* ── Universal MeltSwashes override — covers inline JSX style objects ── */
 *, *::before, *::after,
 input, select, textarea, button {
-  font-family: 'Buycat', cursive !important;
+  font-family: 'MeltSwashes', cursive !important;
 }
 
 /* ── Watercolor Paper Background ──────────────────────────────────── */
@@ -387,6 +387,7 @@ body::after {
   border-bottom: none;
   box-shadow:
     0 -8px 48px rgba(80, 60, 30, 0.12);
+  font-family: 'MeltSwashes', cursive;
 }
 
 /* ── Typography Helpers ───────────────────────────────────────────── */

@@ -392,6 +392,10 @@ const formatK = (n) => {
 const normalizeSearch = (str) =>
   str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[,\s]+/g, " ").trim().toLowerCase();
 
+// ── Stable default for useSupabaseSync — defined once at module level so
+// the object identity never changes between renders (avoids spurious effect triggers).
+const DEFAULT_LISTS = [{ id: "default", name: "Casa", items: [], createdAt: Date.now() }];
+
 // ── Styles (theme-aware) ──────────────────────────────────────────────────────
 const makeStyles = (theme) => ({
   app: {
@@ -4012,6 +4016,41 @@ export default function SuperLista() {
     document.head.appendChild(el);
   }, []);
 
+  // Inject dynamic CSS vars into <head> — keyed on theme so it only runs when
+  // the theme actually changes, never on unrelated state updates (lists, view, etc.).
+  useEffect(() => {
+    let el = document.getElementById("sl-theme-vars");
+    if (!el) {
+      el = document.createElement("style");
+      el.id = "sl-theme-vars";
+      document.head.appendChild(el);
+    }
+    el.textContent = `
+      :root {
+        --accent:      ${theme.accent};
+        --accentDark:  ${theme.accentDark};
+        --accentLight: ${theme.accentLight || theme.accent};
+        --soft:        ${theme.soft};
+        --border:      ${theme.border};
+        --cardBg:      ${theme.cardBg};
+        --cardBorder:  ${theme.cardBorder};
+        --textPrimary: ${theme.textPrimary};
+        --textMuted:   ${theme.textMuted};
+        --navBg:       ${theme.navBg};
+        --headerBg:    ${theme.headerBg};
+        --sheetBg:     ${theme.sheetBg};
+        --pillBg:      ${theme.pillBg};
+        --pillBorder:  ${theme.pillBorder};
+        --tagBg:       ${theme.tagBg};
+        --tagColor:    ${theme.tagColor};
+        --accent-rgb:  ${theme.accentRgb || "94,171,47"};
+        --bottombar-h: calc(64px + env(safe-area-inset-bottom, 0px));
+      }
+      .flip-card-front { background:${theme.soft}; border:1px solid ${theme.border}; }
+      .flip-card-back  { background:${theme.soft}; border:1px solid ${theme.border}; transform:rotateY(180deg); }
+    `;
+  }, [theme]);
+
     const listsWriteTimer = useRef(null);
   useEffect(() => {
     // Debounce — checked items fire many rapid state updates; batch the write
@@ -4027,7 +4066,7 @@ export default function SuperLista() {
   // ── Supabase cloud sync — mirrors every LS write to the cloud ─────────────
   // localStorage stays as the instant read/write cache; Supabase is the
   // persistent layer that survives app reinstalls and enables future multi-device sync.
-  useSupabaseSync("sl_lists",    lists,    setLists,    [{ id:"default", name:"Casa", items:[], createdAt:Date.now() }]);
+  useSupabaseSync("sl_lists",    lists,    setLists,    DEFAULT_LISTS);
   useSupabaseSync("sl_profile",  profile,  setProfile,  { name:"", budget:"" });
   useSupabaseSync("sl_settings", settings, setSettings, { currencyCode:"CRC" });
   useSupabaseSync("sl_history",  history,  setHistory,  []);
@@ -4173,31 +4212,7 @@ export default function SuperLista() {
       {/* ── Confetti / particle root — fixed overlay, pointer-events:none ── */}
       <div id="sl-confetti-root" style={{ position:"fixed", inset:0, zIndex:9999, pointerEvents:"none", overflow:"hidden" }} />
 
-      {/* Dynamic CSS vars — only re-injected on theme change, not every render */}
-      <style>{`
-        :root {
-          --accent:      ${theme.accent};
-          --accentDark:  ${theme.accentDark};
-          --accentLight: ${theme.accentLight || theme.accent};
-          --soft:        ${theme.soft};
-          --border:      ${theme.border};
-          --cardBg:      ${theme.cardBg};
-          --cardBorder:  ${theme.cardBorder};
-          --textPrimary: ${theme.textPrimary};
-          --textMuted:   ${theme.textMuted};
-          --navBg:       ${theme.navBg};
-          --headerBg:    ${theme.headerBg};
-          --sheetBg:     ${theme.sheetBg};
-          --pillBg:      ${theme.pillBg};
-          --pillBorder:  ${theme.pillBorder};
-          --tagBg:       ${theme.tagBg};
-          --tagColor:    ${theme.tagColor};
-          --accent-rgb:  ${theme.accentRgb || "94,171,47"};
-          --bottombar-h: calc(64px + env(safe-area-inset-bottom, 0px));
-        }
-        .flip-card-front { background:${theme.soft}; border:1px solid ${theme.border}; }
-        .flip-card-back  { background:${theme.soft}; border:1px solid ${theme.border}; transform:rotateY(180deg); }
-      `}</style>
+      {/* CSS vars injected via useEffect below — no JSX style tag needed here */}
 
 
 

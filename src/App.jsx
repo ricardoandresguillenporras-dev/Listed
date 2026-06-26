@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { App as CapApp } from "@capacitor/app";
 import { useSupabaseSync } from "./hooks/useSupabaseSync";
+import { currentSyncId, isHouseholdCode, createHouseholdCode, joinHousehold, leaveHousehold } from "./hooks/householdId";
 
 // ── Theme wallpaper backgrounds — gingham + daisy pattern per theme ──
 import bgGreen from "./assets/bg-green.webp";
@@ -959,6 +960,12 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
   const [newAmt, setNewAmt]       = useState("");
   const sym = CURRENCIES.find(c=>c.code===(currency||"CRC"))?.symbol||"₡";
 
+  // ── Hogar compartido — estado local de la UI ───────────────────────────────
+  const [householdJoinCode, setHouseholdJoinCode] = useState("");
+  const [householdMsg, setHouseholdMsg] = useState(null); // {type:'ok'|'err', text}
+  const householdActive = isHouseholdCode();
+  const currentCode = currentSyncId();
+
   const { sheetRef, handleProps, closing, requestClose } = useDragToDismiss(onClose);
 
   const saveAmts = (amts) => { setQuickAmts(amts); try { localStorage.setItem("sl5_quickAmts", JSON.stringify(amts)); } catch {} };
@@ -995,7 +1002,7 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
             onMouseEnter={e=>e.currentTarget.style.background="color-mix(in srgb, var(--accent) 18%, white)"}
             onMouseLeave={e=>e.currentTarget.style.background="color-mix(in srgb, var(--accent) 10%, var(--cardBg))"}>✕</button>
         </div>
-        <TopTabs tabs={[{id:"profile",label:"Perfil"},{id:"budget",label:"💰 Presupuesto"},{id:"currency",label:"Moneda"}]} active={tab} onChange={setTab} theme={{isDark: false}} />
+        <TopTabs tabs={[{id:"profile",label:"Perfil"},{id:"budget",label:"💰 Presupuesto"},{id:"currency",label:"Moneda"},{id:"household",label:"🏡 Hogar"}]} active={tab} onChange={setTab} theme={{isDark: false}} />
         <div style={{ overflowY:"auto", flex:1, padding: tab==="history" ? 0 : 20 }}>
           {tab==="history" && <StatsView history={history} budget={profile.budget} sym={sym} />}
           {tab==="profile" && <>
@@ -1083,6 +1090,80 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
                   {c.code===currency && <span style={{ color:"var(--accent)", fontWeight:900, fontSize:16 }}>✓</span>}
                 </button>
               ))}
+            </div>
+          )}
+          {tab==="household" && (
+            <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+              <div style={{ fontSize:13, color:"var(--textMuted)", lineHeight:1.5 }}>
+                Comparte tus listas con tu familia o roommates sin necesidad de
+                cuentas ni contraseñas. Cualquiera con el código puede ver y
+                editar la misma información — útil para un hogar, no para datos
+                que necesiten quedar privados.
+              </div>
+
+              {householdActive ? (
+                <>
+                  <div style={{ background:"var(--tagBg)", border:"1.5px solid var(--accent)", borderRadius:"var(--radius-md,16px)", padding:"16px", textAlign:"center" }}>
+                    <div style={{ fontSize:11, color:"var(--textMuted)", fontWeight:700, letterSpacing:".04em", textTransform:"uppercase", marginBottom:6 }}>Código de tu hogar</div>
+                    <div style={{ fontSize:24, fontWeight:900, color:"var(--accentDark)", letterSpacing:".05em", fontFamily:"monospace" }}>{currentCode}</div>
+                    <div style={{ fontSize:12, color:"var(--textMuted)", marginTop:8 }}>Comparte este código para que otros se unan</div>
+                  </div>
+                  <button onClick={() => {
+                      if (navigator.share) { navigator.share({ text: `Únete a mi hogar en Listed con este código: ${currentCode}` }).catch(()=>{}); }
+                      else if (navigator.clipboard) { navigator.clipboard.writeText(currentCode).catch(()=>{}); setHouseholdMsg({type:"ok", text:"Código copiado"}); }
+                    }}
+                    style={{ background:"color-mix(in srgb, var(--accent) 10%, var(--cardBg))", border:"1.5px solid var(--border)", borderRadius:"var(--radius-md,16px)", padding:"12px", color:"var(--textPrimary)", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
+                    📋 Compartir código
+                  </button>
+                  <button onClick={() => {
+                      if (!window.confirm("¿Salir de este hogar compartido? Tu dispositivo dejará de sincronizar con los demás y empezará una lista propia vacía. La data del hogar sigue intacta para los demás miembros.")) return;
+                      leaveHousehold();
+                      window.location.reload();
+                    }}
+                    style={{ background:"transparent", border:"1.5px solid #E08A8A", borderRadius:"var(--radius-md,16px)", padding:"12px", color:"#C0392B", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
+                    Salir del hogar
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => {
+                      const code = createHouseholdCode();
+                      setHouseholdMsg({type:"ok", text:`Hogar creado: ${code}. La app se va a recargar.`});
+                      setTimeout(() => window.location.reload(), 1200);
+                    }}
+                    style={{ background:"linear-gradient(135deg,var(--accent),var(--accentDark))", border:"none", borderRadius:"var(--radius-md,16px)", padding:"14px", color:"#fff", fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"inherit", boxShadow:"0 4px 16px rgba(var(--accent-rgb),0.35)" }}>
+                    🏡 Crear código de hogar
+                  </button>
+
+                  <div style={{ display:"flex", alignItems:"center", gap:10, margin:"4px 0" }}>
+                    <div style={{ flex:1, height:1, background:"var(--border)" }} />
+                    <span style={{ fontSize:11, color:"var(--textMuted)", fontWeight:700 }}>O</span>
+                    <div style={{ flex:1, height:1, background:"var(--border)" }} />
+                  </div>
+
+                  <div>
+                    <EditLabel>Unirme a un hogar existente</EditLabel>
+                    <div style={{ display:"flex", gap:8 }}>
+                      <input value={householdJoinCode} onChange={(e) => setHouseholdJoinCode(e.target.value)}
+                        placeholder="CASA-7F3K" style={{ ...editInputStyle, flex:1, fontFamily:"monospace", textTransform:"uppercase" }} />
+                      <button onClick={() => {
+                          if (!householdJoinCode.trim()) return;
+                          const ok = joinHousehold(householdJoinCode);
+                          if (ok) { setHouseholdMsg({type:"ok", text:"Unido. La app se va a recargar."}); setTimeout(() => window.location.reload(), 1000); }
+                        }}
+                        style={{ background:"var(--accent)", border:"none", borderRadius:"var(--radius-sm,10px)", padding:"0 18px", color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", fontFamily:"inherit" }}>
+                        Unirme
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {householdMsg && (
+                <div style={{ fontSize:13, fontWeight:600, color: householdMsg.type==="ok" ? "var(--accentDark)" : "#C0392B", textAlign:"center" }}>
+                  {householdMsg.text}
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -1122,13 +1122,18 @@ function ContextMenu({ item, onClose, onDelete, onDuplicate, onEdit, onChangeEmo
 
         {/* ── El panel se transforma: grilla de íconos en vez de las opciones,
                transición suave de cross-fade, sin tapar toda la pantalla ── */}
-        <div style={{ position:"relative" }}>
+        <div style={{ position:"relative", minHeight: pickingEmoji ? "auto" : undefined }}>
           <div style={{
             display:"flex", flexDirection:"column", gap:2, padding:"8px 12px",
             opacity: pickingEmoji ? 0 : 1,
             transform: pickingEmoji ? "translateY(-6px)" : "translateY(0)",
             transition:"opacity .18s ease, transform .18s ease",
             pointerEvents: pickingEmoji ? "none" : "auto",
+            // position:absolute mientras está oculto — así no reserva espacio
+            // y la grilla de íconos puede ocupar ese hueco en vez de quedar
+            // empujada hacia abajo con un vacío arriba.
+            position: pickingEmoji ? "absolute" : "static",
+            top: 0, left: 0, right: 0,
             visibility: pickingEmoji ? "hidden" : "visible",
           }}>
             <CtxBtn icon="✏️" onClick={onEdit}>Editar artículo</CtxBtn>
@@ -1146,10 +1151,10 @@ function ContextMenu({ item, onClose, onDelete, onDuplicate, onEdit, onChangeEmo
             }}>
               <div style={{
                 display:"grid", gridTemplateColumns:"repeat(6, 1fr)", gap:8,
-                maxHeight:"42vh", overflowY:"auto", padding:"6px 2px",
+                maxHeight:"50vh", overflowY:"auto", padding:"6px 2px",
               }}>
-                {EMOJI_PALETTE.map(em => (
-                  <button key={em} onClick={() => handlePick(em)}
+                {EMOJI_PALETTE.map((em, i) => (
+                  <button key={`${em}-${i}`} onClick={() => handlePick(em)}
                     style={{ aspectRatio:"1", background: em===item.emoji ? "var(--accent)" : "color-mix(in srgb, var(--accent) 6%, var(--cardBg))", border: em===item.emoji ? "2px solid var(--accentDark)" : "2px solid transparent", borderRadius:12, fontSize:24, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"transform .1s, background .1s" }}
                     onTouchStart={e => e.currentTarget.style.transform="scale(1.15)"}
                     onTouchEnd={e   => e.currentTarget.style.transform="scale(1)"}
@@ -1185,6 +1190,8 @@ function EditModal({ item, onClose, onSave, sym }) {
   const [qty,   setQty]   = useState(item.qty||1);
   const [unit,  setUnit]  = useState(item.unit||"pza");
   const [note,  setNote]  = useState(item.note||"");
+  const [emoji, setEmoji] = useState(item.emoji);
+  const [pickingEmoji, setPickingEmoji] = useState(false);
   const subtotal = (parseFloat(price)||0)*qty;
   const presetPrice = CR_PRICES[item.name];
   const { sheetRef, handleProps, closing, requestClose } = useDragToDismiss(onClose);
@@ -1204,9 +1211,33 @@ function EditModal({ item, onClose, onSave, sym }) {
         <div {...handleProps} style={{ display:"flex", justifyContent:"center", padding:"0 0 14px", margin:"-20px -20px 0", cursor:"grab", touchAction:"none" }}>
           <div style={{ width:36, height:4, borderRadius:99, background:"color-mix(in srgb, var(--accent) 20%, white)", marginTop:8 }} />
         </div>
-        <div style={{ fontSize:16, fontWeight:800, marginBottom:16, display:"flex", alignItems:"center", gap:10, color:"var(--textPrimary)" }}>
-          <span style={{ fontSize:28 }}><ItemIcon name={item.name} category={item.category} emoji={item.emoji} size={40} emojiSize={28}/></span> Editar artículo
+        <div style={{ fontSize:16, fontWeight:800, marginBottom: pickingEmoji ? 10 : 16, display:"flex", alignItems:"center", gap:10, color:"var(--textPrimary)" }}>
+          <button onClick={() => setPickingEmoji(v => !v)}
+            style={{ background: pickingEmoji ? "color-mix(in srgb, var(--accent) 16%, var(--cardBg))" : "transparent", border: pickingEmoji ? "2px solid var(--accent)" : "2px solid transparent", borderRadius:14, padding:2, cursor:"pointer", display:"flex", lineHeight:0, transition:"background .15s, border-color .15s", flexShrink:0 }}>
+            <span style={{ fontSize:28 }}><ItemIcon name={item.name} category={item.category} emoji={emoji} size={40} emojiSize={28}/></span>
+          </button>
+          {pickingEmoji ? "Elige un nuevo ícono" : "Editar artículo"}
         </div>
+
+        {pickingEmoji && (
+          <div style={{ marginBottom:16, animation:"fadeIn .18s ease" }}>
+            <div style={{
+              display:"grid", gridTemplateColumns:"repeat(6, 1fr)", gap:8,
+              maxHeight:"38vh", overflowY:"auto", padding:"6px 2px",
+            }}>
+              {EMOJI_PALETTE.map((em, i) => (
+                <button key={`${em}-${i}`} onClick={() => { setEmoji(em); setPickingEmoji(false); }}
+                  style={{ aspectRatio:"1", background: em===emoji ? "var(--accent)" : "color-mix(in srgb, var(--accent) 6%, var(--cardBg))", border: em===emoji ? "2px solid var(--accentDark)" : "2px solid transparent", borderRadius:12, fontSize:24, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"transform .1s, background .1s" }}
+                  onTouchStart={e => e.currentTarget.style.transform="scale(1.15)"}
+                  onTouchEnd={e   => e.currentTarget.style.transform="scale(1)"}
+                  onMouseEnter={e => e.currentTarget.style.background = em===emoji ? "var(--accent)" : "color-mix(in srgb, var(--accent) 14%, var(--cardBg))"}
+                  onMouseLeave={e => e.currentTarget.style.background = em===emoji ? "var(--accent)" : "color-mix(in srgb, var(--accent) 6%, var(--cardBg))"}>
+                  {em}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <EditLabel>Nombre</EditLabel>
         <input value={name} onChange={(e) => setName(e.target.value)} style={editInputStyle} />
         <EditLabel>Precio por unidad</EditLabel>
@@ -1243,7 +1274,7 @@ function EditModal({ item, onClose, onSave, sym }) {
           <button onClick={requestClose} style={{ flex:1, background:"color-mix(in srgb, var(--accent) 8%, var(--cardBg))", border:"1px solid var(--border)", borderRadius:"var(--radius-md,16px)", padding:"13px 12px", color:"var(--textMuted)", fontSize:14, fontWeight:600, cursor:"pointer", fontFamily:"inherit", transition:"background .12s ease" }}
             onMouseEnter={e=>e.currentTarget.style.background="color-mix(in srgb, var(--accent) 14%, var(--cardBg))"}
             onMouseLeave={e=>e.currentTarget.style.background="color-mix(in srgb, var(--accent) 8%, var(--cardBg))"}>Cancelar</button>
-          <button onClick={() => { Sounds.save(); requestClose(() => onSave({ ...item, name, price, qty, unit, note })); }}
+          <button onClick={() => { Sounds.save(); requestClose(() => onSave({ ...item, name, price, qty, unit, note, emoji })); }}
             style={{ flex:2, background:"linear-gradient(135deg,var(--accent),var(--accentDark))", border:"none", borderRadius:"var(--radius-md,16px)", padding:"13px 12px", color:"#fff", fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"inherit", boxShadow:"0 4px 16px rgba(var(--accent-rgb),0.32)", transition:"transform .14s var(--ease-spring), box-shadow .14s ease" }}
             onMouseDown={e=>e.currentTarget.style.transform="scale(.96)"}
             onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}

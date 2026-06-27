@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { App as CapApp } from "@capacitor/app";
 import { useSupabaseSync } from "./hooks/useSupabaseSync";
-import { currentSyncId, isHouseholdCode, createHouseholdCode, joinHousehold, leaveHousehold } from "./hooks/householdId";
 
 // ── Theme wallpaper backgrounds — gingham + daisy pattern per theme ──
 import bgGreen from "./assets/bg-green.webp";
@@ -735,27 +734,8 @@ const SwipeTabContainer = ({ tab, onTabChange, children }) => {
     el.style.transform = baseTranslate(tabIdx, extraPx);
   }, [tabIdx]); // baseTranslate es una función pura de tabIdx — seguro inline
 
-  // Resetear por completo el estado de arrastre — se usa tanto al terminar un
-  // gesto normalmente como al cancelarlo (touch interrumpido, cambio de tab
-  // desde afuera, etc.) para que dragging.current NUNCA quede atascado en true.
-  const resetDragState = useCallback(() => {
-    dragging.current = false;
-    startX.current = null;
-    startY.current = null;
-    dx.current = 0;
-    direction.current = null;
-  }, []);
-
   // Centrar en la posición correcta cada vez que cambia el tab (tap en BottomNav, etc.)
-  // Si había un arrastre en curso cuando el tab cambió desde afuera (p.ej. el
-  // usuario tocó "Estadísticas" o "Perfil" mientras el dedo seguía en pantalla
-  // de un swipe anterior), cancelamos ese arrastre primero — así nunca hay dos
-  // escritores compitiendo por el mismo style.transform, que era lo que dejaba
-  // el carrusel congelado mostrando contenido de otra pestaña.
-  useEffect(() => {
-    resetDragState();
-    applyTranslate(0, true);
-  }, [tab, applyTranslate, resetDragState]);
+  useEffect(() => { applyTranslate(0, true); }, [tab, applyTranslate]);
 
   const startDrag = (clientX, clientY) => {
     startX.current = clientX;
@@ -789,31 +769,23 @@ const SwipeTabContainer = ({ tab, onTabChange, children }) => {
 
   const endDrag = () => {
     if (!dragging.current) return;
-    const wasHorizontal = direction.current === "h";
-    const finalDx = dx.current;
-    const finalIdx = tabIdx;
-    // Limpiar el estado ANTES de decidir si cambiamos de tab — así, incluso si
-    // onTabChange dispara un re-render síncrono que desmonta/remonta este nodo,
-    // el estado de arrastre ya quedó limpio y no hay forma de que quede atascado.
-    resetDragState();
-
-    if (!wasHorizontal) return;
+    dragging.current = false;
+    if (direction.current !== "h") { direction.current = null; return; }
 
     const THRESHOLD = window.innerWidth * 0.28;
-    if      (finalDx < -THRESHOLD && finalIdx < TAB_ORDER.length - 1) onTabChange(TAB_ORDER[finalIdx + 1]);
-    else if (finalDx >  THRESHOLD && finalIdx > 0)                     onTabChange(TAB_ORDER[finalIdx - 1]);
+    if      (dx.current < -THRESHOLD && tabIdx < TAB_ORDER.length - 1) onTabChange(TAB_ORDER[tabIdx + 1]);
+    else if (dx.current >  THRESHOLD && tabIdx > 0)                     onTabChange(TAB_ORDER[tabIdx - 1]);
     else                                                                  applyTranslate(0, true);
+
+    startX.current = null;
+    dx.current = 0;
+    direction.current = null;
   };
 
   // Touch (móvil)
-  const onTouchStart  = (e) => startDrag(e.touches[0].clientX, e.touches[0].clientY);
-  const onTouchMove   = (e) => moveDrag(e.touches[0].clientX, e.touches[0].clientY, e);
-  const onTouchEnd    = endDrag;
-  // onTouchCancel: el sistema puede cancelar el touch a medio gesto (llamada
-  // entrante, gesto del sistema, cambio de foco) sin disparar touchend nunca.
-  // Sin este handler, dragging.current se quedaba en true para siempre y los
-  // toques siguientes dejaban de mover el carrusel — la app "se congelaba".
-  const onTouchCancel = resetDragState;
+  const onTouchStart = (e) => startDrag(e.touches[0].clientX, e.touches[0].clientY);
+  const onTouchMove  = (e) => moveDrag(e.touches[0].clientX, e.touches[0].clientY, e);
+  const onTouchEnd   = endDrag;
 
   // Mouse (escritorio / preview) — mismo gesto con botón izquierdo
   const onMouseDown = (e) => startDrag(e.clientX, e.clientY);
@@ -828,7 +800,6 @@ const SwipeTabContainer = ({ tab, onTabChange, children }) => {
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        onTouchCancel={onTouchCancel}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
@@ -960,12 +931,6 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
   const [newAmt, setNewAmt]       = useState("");
   const sym = CURRENCIES.find(c=>c.code===(currency||"CRC"))?.symbol||"₡";
 
-  // ── Hogar compartido — estado local de la UI ───────────────────────────────
-  const [householdJoinCode, setHouseholdJoinCode] = useState("");
-  const [householdMsg, setHouseholdMsg] = useState(null); // {type:'ok'|'err', text}
-  const householdActive = isHouseholdCode();
-  const currentCode = currentSyncId();
-
   const { sheetRef, handleProps, closing, requestClose } = useDragToDismiss(onClose);
 
   const saveAmts = (amts) => { setQuickAmts(amts); try { localStorage.setItem("sl5_quickAmts", JSON.stringify(amts)); } catch {} };
@@ -1002,7 +967,7 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
             onMouseEnter={e=>e.currentTarget.style.background="color-mix(in srgb, var(--accent) 18%, white)"}
             onMouseLeave={e=>e.currentTarget.style.background="color-mix(in srgb, var(--accent) 10%, var(--cardBg))"}>✕</button>
         </div>
-        <TopTabs tabs={[{id:"profile",label:"Perfil"},{id:"budget",label:"💰 Presupuesto"},{id:"currency",label:"Moneda"},{id:"household",label:"🏡 Hogar"}]} active={tab} onChange={setTab} theme={{isDark: false}} />
+        <TopTabs tabs={[{id:"profile",label:"Perfil"},{id:"budget",label:"💰 Presupuesto"},{id:"currency",label:"Moneda"}]} active={tab} onChange={setTab} theme={{isDark: false}} />
         <div style={{ overflowY:"auto", flex:1, padding: tab==="history" ? 0 : 20 }}>
           {tab==="history" && <StatsView history={history} budget={profile.budget} sym={sym} />}
           {tab==="profile" && <>
@@ -1090,80 +1055,6 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
                   {c.code===currency && <span style={{ color:"var(--accent)", fontWeight:900, fontSize:16 }}>✓</span>}
                 </button>
               ))}
-            </div>
-          )}
-          {tab==="household" && (
-            <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-              <div style={{ fontSize:13, color:"var(--textMuted)", lineHeight:1.5 }}>
-                Comparte tus listas con tu familia o roommates sin necesidad de
-                cuentas ni contraseñas. Cualquiera con el código puede ver y
-                editar la misma información — útil para un hogar, no para datos
-                que necesiten quedar privados.
-              </div>
-
-              {householdActive ? (
-                <>
-                  <div style={{ background:"var(--tagBg)", border:"1.5px solid var(--accent)", borderRadius:"var(--radius-md,16px)", padding:"16px", textAlign:"center" }}>
-                    <div style={{ fontSize:11, color:"var(--textMuted)", fontWeight:700, letterSpacing:".04em", textTransform:"uppercase", marginBottom:6 }}>Código de tu hogar</div>
-                    <div style={{ fontSize:24, fontWeight:900, color:"var(--accentDark)", letterSpacing:".05em", fontFamily:"monospace" }}>{currentCode}</div>
-                    <div style={{ fontSize:12, color:"var(--textMuted)", marginTop:8 }}>Comparte este código para que otros se unan</div>
-                  </div>
-                  <button onClick={() => {
-                      if (navigator.share) { navigator.share({ text: `Únete a mi hogar en Listed con este código: ${currentCode}` }).catch(()=>{}); }
-                      else if (navigator.clipboard) { navigator.clipboard.writeText(currentCode).catch(()=>{}); setHouseholdMsg({type:"ok", text:"Código copiado"}); }
-                    }}
-                    style={{ background:"color-mix(in srgb, var(--accent) 10%, var(--cardBg))", border:"1.5px solid var(--border)", borderRadius:"var(--radius-md,16px)", padding:"12px", color:"var(--textPrimary)", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
-                    📋 Compartir código
-                  </button>
-                  <button onClick={() => {
-                      if (!window.confirm("¿Salir de este hogar compartido? Tu dispositivo dejará de sincronizar con los demás y empezará una lista propia vacía. La data del hogar sigue intacta para los demás miembros.")) return;
-                      leaveHousehold();
-                      window.location.reload();
-                    }}
-                    style={{ background:"transparent", border:"1.5px solid #E08A8A", borderRadius:"var(--radius-md,16px)", padding:"12px", color:"#C0392B", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
-                    Salir del hogar
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button onClick={() => {
-                      const code = createHouseholdCode();
-                      setHouseholdMsg({type:"ok", text:`Hogar creado: ${code}. La app se va a recargar.`});
-                      setTimeout(() => window.location.reload(), 1200);
-                    }}
-                    style={{ background:"linear-gradient(135deg,var(--accent),var(--accentDark))", border:"none", borderRadius:"var(--radius-md,16px)", padding:"14px", color:"#fff", fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"inherit", boxShadow:"0 4px 16px rgba(var(--accent-rgb),0.35)" }}>
-                    🏡 Crear código de hogar
-                  </button>
-
-                  <div style={{ display:"flex", alignItems:"center", gap:10, margin:"4px 0" }}>
-                    <div style={{ flex:1, height:1, background:"var(--border)" }} />
-                    <span style={{ fontSize:11, color:"var(--textMuted)", fontWeight:700 }}>O</span>
-                    <div style={{ flex:1, height:1, background:"var(--border)" }} />
-                  </div>
-
-                  <div>
-                    <EditLabel>Unirme a un hogar existente</EditLabel>
-                    <div style={{ display:"flex", gap:8 }}>
-                      <input value={householdJoinCode} onChange={(e) => setHouseholdJoinCode(e.target.value)}
-                        placeholder="CASA-7F3K" style={{ ...editInputStyle, flex:1, fontFamily:"monospace", textTransform:"uppercase" }} />
-                      <button onClick={() => {
-                          if (!householdJoinCode.trim()) return;
-                          const ok = joinHousehold(householdJoinCode);
-                          if (ok) { setHouseholdMsg({type:"ok", text:"Unido. La app se va a recargar."}); setTimeout(() => window.location.reload(), 1000); }
-                        }}
-                        style={{ background:"var(--accent)", border:"none", borderRadius:"var(--radius-sm,10px)", padding:"0 18px", color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer", fontFamily:"inherit" }}>
-                        Unirme
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {householdMsg && (
-                <div style={{ fontSize:13, fontWeight:600, color: householdMsg.type==="ok" ? "var(--accentDark)" : "#C0392B", textAlign:"center" }}>
-                  {householdMsg.text}
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -1945,7 +1836,7 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
               onChange={e => setNewName(e.target.value)}
               onKeyDown={e => e.key==="Enter" && handleCreate()}
               placeholder="¿Cómo se llama?"
-              style={{ flex:1, minWidth:0, background: theme.isDark ? "rgba(45,10,72,0.75)" : "rgba(255,255,255,0.7)", border: theme.isDark ? "1.5px solid rgba(139,63,200,0.35)" : `1.5px solid ${theme.border}`, borderRadius:14, padding:"13px 16px", color: theme.isDark ? "#FFFFFF" : "#1A2118", fontSize:16, fontWeight:600, outline:"none", boxSizing:"border-box", transition:"border-color .15s" }}
+              style={{ flex:1, background: theme.isDark ? "rgba(45,10,72,0.75)" : "rgba(255,255,255,0.7)", border: theme.isDark ? "1.5px solid rgba(139,63,200,0.35)" : `1.5px solid ${theme.border}`, borderRadius:14, padding:"13px 16px", color: theme.isDark ? "#FFFFFF" : "#1A2118", fontSize:16, fontWeight:600, outline:"none", boxSizing:"border-box", transition:"border-color .15s" }}
               onFocus={e  => e.target.style.borderColor="var(--accent)"}
               onBlur={e   => e.target.style.borderColor= theme.isDark ? "rgba(139,63,200,0.35)" : theme.border}
             />
@@ -4125,7 +4016,7 @@ export default function SuperLista() {
     document.head.appendChild(el);
   }, []);
 
-    const listsWriteTimer = useRef(null);
+  const listsWriteTimer = useRef(null);
   useEffect(() => {
     // Debounce — checked items fire many rapid state updates; batch the write
     clearTimeout(listsWriteTimer.current);
@@ -4139,11 +4030,7 @@ export default function SuperLista() {
 
   // ── Supabase cloud sync — mirrors every LS write to the cloud ─────────────
   // localStorage stays as the instant read/write cache; Supabase is the
-  // persistent layer that survives app reinstalls. Si el dispositivo está
-  // unido a un código de hogar (ver hooks/householdId.js), esto también
-  // sincroniza con los demás dispositivos del hogar vía polling cada pocos
-  // segundos (no Realtime, para evitar cualquier costo de conexión WebSocket
-  // con varios usuarios activos).
+  // persistent layer that survives app reinstalls and enables future multi-device sync.
   useSupabaseSync("sl_lists",    lists,    setLists,    DEFAULT_LISTS);
   useSupabaseSync("sl_profile",  profile,  setProfile,  { name:"", budget:"" });
   useSupabaseSync("sl_settings", settings, setSettings, { currencyCode:"CRC" });
@@ -4248,12 +4135,8 @@ export default function SuperLista() {
 
   const theme = useMemo(() => THEMES[themeName], [themeName]);
 
-  // Inject dynamic CSS vars into <head> — keyed on theme so it only runs when
-  // the theme actually changes, never on unrelated state updates (lists, view, etc.).
-  // NOTA: este efecto debe vivir después de `const theme` — antes estaba ~150
-  // líneas arriba, ejecutándose antes de que `theme` existiera en este scope,
-  // lo cual causaba un ReferenceError (temporal dead zone) y dejaba la pantalla
-  // en negro al entrar a la app.
+  // Inject dynamic CSS vars — runs only when theme changes (not on every render)
+  // Must be placed AFTER `const theme` so theme is defined when the effect runs.
   useEffect(() => {
     let el = document.getElementById("sl-theme-vars");
     if (!el) {

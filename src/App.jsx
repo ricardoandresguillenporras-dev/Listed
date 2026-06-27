@@ -1019,7 +1019,7 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
             </div>
 
             {/* Big number input */}
-            <div style={{ background:"#FBF9F5", borderRadius:"var(--radius-md,16px)", padding:"16px 18px", marginBottom:16, display:"flex", alignItems:"center", gap:10, border:"1.5px solid var(--border)", transition:"border-color .2s, box-shadow .2s" }}
+            <div style={{ background:"var(--cardBg,#FBF9F5)", borderRadius:"var(--radius-md,16px)", padding:"16px 18px", marginBottom:16, display:"flex", alignItems:"center", gap:10, border:"1.5px solid var(--border)", transition:"border-color .2s, box-shadow .2s" }}
               onFocus={(e) => { e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.boxShadow="0 0 0 3px rgba(var(--accent-rgb),0.12)"; }}
               onBlur={(e) =>  { e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.boxShadow="none"; }}>
               <span style={{ color:"var(--accent)", fontWeight:900, fontSize:24 }}>{sym}</span>
@@ -1186,8 +1186,8 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
 }
 
 // ── Edit helpers ──────────────────────────────────────────────────────────────
-const editInputStyle = { width:"100%", background:"#FBF9F5", border:"1.5px solid var(--border)", borderRadius:"var(--radius-sm,10px)", padding:"11px 12px", color:"var(--textPrimary)", fontSize:15, outline:"none", boxSizing:"border-box", transition:"border-color .15s ease, box-shadow .15s ease", fontFamily:"inherit" };
-const qtyEditBtn = { background:"#EEEAE2", border:"1px solid var(--border)", color:"var(--textPrimary,#2C2318)", width:40, height:40, borderRadius:"var(--radius-sm,10px)", fontSize:20, cursor:"pointer", transition:"background .12s ease" };
+const editInputStyle = { width:"100%", background:"var(--cardBg,#FBF9F5)", border:"1.5px solid var(--border)", borderRadius:"var(--radius-sm,10px)", padding:"11px 12px", color:"var(--textPrimary)", fontSize:15, outline:"none", boxSizing:"border-box", transition:"border-color .15s ease, box-shadow .15s ease", fontFamily:"inherit" };
+const qtyEditBtn = { background:"var(--soft,#EEEAE2)", border:"1px solid var(--border)", color:"var(--textPrimary,#2C2318)", width:40, height:40, borderRadius:"var(--radius-sm,10px)", fontSize:20, cursor:"pointer", transition:"background .12s ease" };
 function EditLabel({ children }) {
   return <label style={{ display:"block", fontSize:11, color:"var(--textMuted)", fontWeight:700, marginBottom:4, marginTop:14, textTransform:"uppercase", letterSpacing:1 }}>{children}</label>;
 }

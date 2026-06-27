@@ -1050,7 +1050,7 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
                     <input autoFocus type="number" value={newAmt} onChange={e => setNewAmt(e.target.value)}
                       onKeyDown={e => { if(e.key==="Enter") confirmAmt(); if(e.key==="Escape") { setAddingAmt(false); setNewAmt(""); } }}
                       placeholder="ej. 15000"
-                      style={{ width:90, background:"#FEFCF9", border:"1.5px solid var(--accent)", borderRadius:20, padding:"7px 10px", color:"#2C2318", fontSize:13, outline:"none", textAlign:"center" }} />
+                      style={{ width:90, background: theme.isDark ? "var(--cardBg)" : "#FEFCF9", border:"1.5px solid var(--accent)", borderRadius:20, padding:"7px 10px", color:"var(--textPrimary)", fontSize:13, outline:"none", textAlign:"center" }} />
                     <button onClick={confirmAmt} style={{ background:"var(--accent)", border:"none", borderRadius:"50%", width:28, height:28, color:"#111", fontSize:16, fontWeight:900, cursor:"pointer" }}>✓</button>
                   </div>
                 ) : (
@@ -1371,7 +1371,7 @@ function EditModal({ item, onClose, onSave, sym }) {
           <button style={qtyEditBtn} onClick={() => setQty(q => Math.max(1,q-1))}>−</button>
           <span style={{ fontSize:18, fontWeight:800, minWidth:36, textAlign:"center", lineHeight:"40px" }}>{qty}</span>
           <button style={qtyEditBtn} onClick={() => setQty(q => q+1)}>+</button>
-          <select value={unit} onChange={(e) => setUnit(e.target.value)} style={{ background:"#EEEAE2", border:"1px solid var(--border)", borderRadius:"var(--radius-sm,10px)", color:"#1A2118", padding:"0 10px", fontSize:14, height:40, fontFamily:"inherit" }}>
+          <select value={unit} onChange={(e) => setUnit(e.target.value)} style={{ background: theme.isDark ? "var(--soft)" : "#EEEAE2", border:"1px solid var(--border)", borderRadius:"var(--radius-sm,10px)", color:"var(--textPrimary)", padding:"0 10px", fontSize:14, height:40, fontFamily:"inherit" }}>
             {UNITS.map(u => <option key={u}>{u}</option>)}
           </select>
         </div>
@@ -1601,10 +1601,10 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
                   onChange={(e) => setTempPrice(e.target.value)}
                   onBlur={() => savePrice(item.id)}
                   onKeyDown={(e) => e.key==="Enter" && savePrice(item.id)}
-                  style={{ background:"#FFFFFF", border:"1.5px solid #0369A1", borderRadius:"var(--radius-sm,10px)", color:"#0369A1", fontSize:13, width:80, padding:"2px 6px", textAlign:"right", outline:"none" }} />
+                  style={{ background: theme.isDark ? "var(--cardBg)" : "#FFFFFF", border: theme.isDark ? "1.5px solid var(--border)" : "1.5px solid #0369A1", borderRadius:"var(--radius-sm,10px)", color: theme.isDark ? "var(--textPrimary)" : "#0369A1", fontSize:13, width:80, padding:"2px 6px", textAlign:"right", outline:"none" }} />
               ) : (
                 <button onClick={(e) => { e.stopPropagation(); setEditingPriceId(item.id); setTempPrice(item.price||""); }}
-                  style={{ background:"none", border:"none", color:item.price?"#0369A1":"#AAA", fontSize:12, cursor:"pointer", padding:0, textDecoration:"underline dotted" }}>
+                  style={{ background:"none", border:"none", color: theme.isDark ? (item.price ? "var(--accentLight)" : "var(--textMuted)") : (item.price ? "#0369A1" : "#AAA"), fontSize:12, cursor:"pointer", padding:0, textDecoration:"underline dotted" }}>
                   {item.price ? `${sym}${Math.round(subtotal).toLocaleString()}` : "+ precio"}
                 </button>
               )}
@@ -1829,7 +1829,7 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
               <div key={i} style={{
                 position:"absolute", top:st.t, left:st.l,
                 width:st.s, height:st.s, borderRadius:"50%",
-                background:"#FEFCF9",
+                background: theme?.isDark ? (theme?.cardBg || "var(--cardBg)") : "#FEFCF9",
                 boxShadow:`0 0 ${st.s*4}px rgba(255,255,255,0.55)`,
                 animation:`starTwinkle ${2+i*0.4}s ease-in-out infinite`,
               }} />
@@ -2160,16 +2160,16 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
 
         {/* ── Lista de Compras: header colapsable, con subtotal propio ── */}
         {shopping.length>0 && (
-          <div style={{ display:"flex", alignItems:"center", padding:"9px 12px 9px 16px", borderTop:"1px solid #DCEFF9", background:"#EAF5FB", gap:8 }}>
+          <div style={{ display:"flex", alignItems:"center", padding:"9px 12px 9px 16px", borderTop: theme.isDark ? "1px solid var(--border)" : "1px solid #DCEFF9", background: theme.isDark ? "rgba(37,8,63,0.60)" : "#EAF5FB", gap:8 }}>
             <button onClick={() => setShowShopping(v => !v)}
-              style={{ background:"none", border:"none", color:"#0369A1", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:5, padding:0, fontWeight:700, flex:1, minWidth:0 }}>
+              style={{ background:"none", border:"none", color: theme.isDark ? "var(--textMuted)" : "#0369A1", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:5, padding:0, fontWeight:700, flex:1, minWidth:0 }}>
               <span style={{ fontSize:10, transition:"transform .2s", display:"inline-block", transform: showShopping ? "rotate(0deg)" : "rotate(-90deg)", opacity:.7 }}>▼</span>
               <span style={{ fontSize:15, lineHeight:1 }}>📝</span>
-              <span style={{ fontSize:13, color:"#2C2318", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+              <span style={{ fontSize:13, color: theme.isDark ? "var(--textPrimary)" : "#2C2318", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                 {shopping.length === 1 ? "1 en lista de compras" : `${shopping.length} en lista de compras`}
               </span>
               {shoppingCost > 0 && (
-                <span style={{ fontSize:12, color:"#0369A1", fontWeight:800, background:"#FFFFFF", borderRadius:"var(--radius-sm,10px)", padding:"1px 7px", marginLeft:2, flexShrink:0 }}>
+                <span style={{ fontSize:12, color: theme.isDark ? "var(--textPrimary)" : "#0369A1", fontWeight:800, background: theme.isDark ? "var(--soft)" : "#FFFFFF", borderRadius:"var(--radius-sm,10px)", padding:"1px 7px", marginLeft:2, flexShrink:0 }}>
                   {sym}{Math.round(shoppingCost).toLocaleString()}
                 </span>
               )}
@@ -2190,13 +2190,13 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
 
         {/* ── En el Carrito de Compras: header colapsable, con subtotal propio ── */}
         {cart.length>0 && (
-          <div style={{ display:"flex", alignItems:"center", padding:"9px 12px 9px 16px", borderTop:"1px solid #DCF4DE", background:"#ECF6ED", gap:8 }}>
+          <div style={{ display:"flex", alignItems:"center", padding:"9px 12px 9px 16px", borderTop: theme.isDark ? "1px solid var(--border)" : "1px solid #DCF4DE", background: theme.isDark ? "rgba(37,8,63,0.60)" : "#ECF6ED", gap:8 }}>
             {/* Collapse toggle + label */}
             <button onClick={() => setShowCart(v => !v)}
               style={{ background:"none", border:"none", color:"var(--accentDark)", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:5, padding:0, fontWeight:700, flex:1, minWidth:0 }}>
               <span style={{ fontSize:10, transition:"transform .2s", display:"inline-block", transform: showCart ? "rotate(0deg)" : "rotate(-90deg)", opacity:.7 }}>▼</span>
               <span style={{ fontSize:15, lineHeight:1 }}>🛍</span>
-              <span style={{ fontSize:13, color:"#2C2318", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+              <span style={{ fontSize:13, color: theme.isDark ? "var(--textPrimary)" : "#2C2318", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                 {cart.length === 1 ? "1 en el carrito" : `${cart.length} en el carrito`}
               </span>
               {inBagCost > 0 && (
@@ -2449,7 +2449,7 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
           </button>
           <input value={customName} onChange={e => handleCustomNameChange(e.target.value)} onKeyDown={e => e.key==="Enter" && addCustom()}
             placeholder="Nombre del artículo..."
-            style={{ flex:1, background:"#FEFCF9", border:"1.5px solid var(--border)", borderRadius:"var(--radius-md,16px)", padding:"13px 14px", color:"#1A2118", fontSize:15, fontWeight:600, outline:"none", transition:"border-color .15s, box-shadow .15s", fontFamily:"inherit" }}
+            style={{ flex:1, background: theme.isDark ? "var(--cardBg)" : "#FEFCF9", border:"1.5px solid var(--border)", borderRadius:"var(--radius-md,16px)", padding:"13px 14px", color:"var(--textPrimary)", fontSize:15, fontWeight:600, outline:"none", transition:"border-color .15s, box-shadow .15s", fontFamily:"inherit" }}
             onFocus={e => { e.target.style.borderColor="var(--accent)"; e.target.style.boxShadow="0 0 0 3px var(--soft)"; }}
             onBlur={e  => e.target.style.borderColor="#D8DDD6"} />
           <button onClick={(e) => addCustom(e)}
@@ -2464,14 +2464,14 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
           <input type="number" inputMode="decimal" placeholder="Precio (opcional)" value={customPrice}
             onChange={e => setCustomPrice(e.target.value)}
             onKeyDown={e => e.key==="Enter" && addCustom()}
-            style={{ flex:1, background:"#FEFCF9", border:"1.5px solid var(--border)", borderRadius:"var(--radius-sm,10px)", padding:"9px 12px", color:"#1A2118", fontSize:14, fontWeight:600, outline:"none", transition:"border-color .15s, box-shadow .15s", fontFamily:"inherit" }}
+            style={{ flex:1, background: theme.isDark ? "var(--cardBg)" : "#FEFCF9", border:"1.5px solid var(--border)", borderRadius:"var(--radius-sm,10px)", padding:"9px 12px", color:"var(--textPrimary)", fontSize:14, fontWeight:600, outline:"none", transition:"border-color .15s, box-shadow .15s", fontFamily:"inherit" }}
             onFocus={e => { e.target.style.borderColor="var(--accent)"; e.target.style.boxShadow="0 0 0 3px var(--soft)"; }}
             onBlur={e  => { e.target.style.borderColor="#D8DDD6"; e.target.style.boxShadow="none"; }} />
         </div>
 
         {/* ── Destino del artículo: Lista de Compras o Inventario ── */}
         <div style={{ marginTop:10, position:"relative" }}>
-          <div style={{ fontSize:10, fontWeight:700, color:"#9E9285", letterSpacing:".06em", textTransform:"uppercase", marginBottom:6 }}>Agregar a</div>
+          <div style={{ fontSize:10, fontWeight:700, color: theme.isDark ? "var(--textMuted)" : "#9E9285", letterSpacing:".06em", textTransform:"uppercase", marginBottom:6 }}>Agregar a</div>
           <div style={{ display:"flex", gap:8 }}>
             {[
               { value:"shopping", label:"Lista de compras", icon:"🛒" },
@@ -2512,8 +2512,8 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
 
         {/* ── Emoji palette (slides open) ── */}
         {showEmojiPicker && (
-          <div style={{ marginTop:12, background:"#FEFCF9", border:"1px solid #E8E2D8", borderRadius:16, padding:"12px 10px", animation:"fadeIn .15s ease" }}>
-            <div style={{ fontSize:10, color:"#B0A898", fontWeight:700, letterSpacing:".06em", textTransform:"uppercase", marginBottom:8, paddingLeft:2 }}>Elige un ícono</div>
+          <div style={{ marginTop:12, background: theme.isDark ? "var(--cardBg)" : "#FEFCF9", border: theme.isDark ? "1px solid var(--border)" : "1px solid #E8E2D8", borderRadius:16, padding:"12px 10px", animation:"fadeIn .15s ease" }}>
+            <div style={{ fontSize:10, color: theme.isDark ? "var(--textMuted)" : "#B0A898", fontWeight:700, letterSpacing:".06em", textTransform:"uppercase", marginBottom:8, paddingLeft:2 }}>Elige un ícono</div>
             <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
               {EMOJI_PALETTE.map(em => (
                 <button key={em} onClick={() => handleManualEmojiPick(em)}

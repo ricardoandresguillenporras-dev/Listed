@@ -1573,11 +1573,11 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
   // ── Shopping-list item: "in lista de compras" style ────────────────────────
   if (stage === "shopping") {
     return (
-      <div ref={wrapRef} className="item-stagger" style={{ position:"relative", overflow:"hidden", borderBottom:"1px solid #EFEAE0", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemSpring .30s var(--ease-spring) both", contain:"layout style paint", willChange:"transform" }}>
+      <div ref={wrapRef} className="item-stagger" style={{ position:"relative", overflow:"hidden", borderBottom: theme.isDark ? "1px solid var(--border)" : "1px solid #EFEAE0", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemSpring .30s var(--ease-spring) both", contain:"layout style paint", willChange:"transform" }}>
         <div className="sl-bg-left"  style={{ position:"absolute", inset:0, background:"#FDF1D6", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-end",  paddingRight:22, fontSize:14, fontWeight:700, color:"#B45309", gap:8, transition:"opacity .12s ease" }}>↩ A inventario</div>
         <div className="sl-bg-right" style={{ position:"absolute", inset:0, background:"#DCEFF9", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-start", paddingLeft:22, fontSize:14, fontWeight:700, color:"#0369A1", gap:8, transition:"opacity .12s ease" }}>🛍 Al carrito</div>
         <div ref={rowRef}
-          style={{ display:"flex", alignItems:"center", padding:"11px 14px", gap:10, background:"#F3FAFE", position:"relative", touchAction:"pan-y", userSelect:"none", transition:"background .15s", cursor:"pointer", willChange:"transform" }}
+          style={{ display:"flex", alignItems:"center", padding:"11px 14px", gap:10, background: theme.isDark ? "var(--cardBg)" : "#F3FAFE", position:"relative", touchAction:"pan-y", userSelect:"none", transition:"background .15s", cursor:"pointer", willChange:"transform" }}
           onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd}
           onMouseDown={onStart} onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
           onClick={(e) => { if (!swipeState.current.hasMoved && !e.target.closest("button") && !e.target.closest("input")) handleCheck(e); }}
@@ -1617,11 +1617,11 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
 
   // ── Inventory item ──────────────────────────────────────────────────────────
   return (
-    <div ref={wrapRef} className="item-stagger" style={{ position:"relative", overflow:"hidden", borderBottom:"1px solid #EFEAE0", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemSpring .30s var(--ease-spring) both", contain:"layout style paint", willChange:"transform" }}>
+    <div ref={wrapRef} className="item-stagger" style={{ position:"relative", overflow:"hidden", borderBottom: theme.isDark ? "1px solid var(--border)" : "1px solid #EFEAE0", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemSpring .30s var(--ease-spring) both", contain:"layout style paint", willChange:"transform" }}>
       <div className="sl-bg-left"  style={{ position:"absolute", inset:0, background:"#FBDADA", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-end",  paddingRight:22, fontSize:14, fontWeight:700, color:"#EF4444", gap:8, transition:"opacity .12s ease" }}>🗑 Eliminar</div>
       <div className="sl-bg-right" style={{ position:"absolute", inset:0, background:"color-mix(in srgb, var(--accent) 13%, var(--cardBg))", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-start", paddingLeft:22, fontSize:14, fontWeight:700, color:"var(--accentDark)", gap:8, transition:"opacity .12s ease" }}>✓ Seleccionar</div>
       <div ref={rowRef}
-        style={{ display:"flex", alignItems:"center", padding:"11px 14px", gap:10, background:"#FEFCF9", position:"relative", touchAction:"pan-y", userSelect:"none", transition:"background .15s", cursor:"pointer", willChange:"transform" }}
+        style={{ display:"flex", alignItems:"center", padding:"11px 14px", gap:10, background: theme.isDark ? "var(--cardBg)" : "#FEFCF9", position:"relative", touchAction:"pan-y", userSelect:"none", transition:"background .15s", cursor:"pointer", willChange:"transform" }}
         onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd}
         onMouseDown={onStart} onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
         onClick={(e) => { if (!swipeState.current.hasMoved && !e.target.closest("button") && !e.target.closest("input")) handleCheck(e); }}
@@ -1638,7 +1638,7 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
         <span style={{ fontSize:22, width:30, textAlign:"center", flexShrink:0 }}><ItemIcon name={item.name} category={item.category} emoji={item.emoji} size={30} emojiSize={22}/></span>
 
         <div style={{ flex:1, minWidth:0 }}>
-          <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{item.name}</span>
+          <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"var(--textPrimary)" }}>{item.name}</span>
           <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:3 }}>
             {isEditingPrice ? (
               <input autoFocus type="number" placeholder="0" value={tempPrice}
@@ -1662,11 +1662,11 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
               style={{ background:"#FCE5E5", border:"none", color:"#EF4444", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>🗑</button>
           ) : (
             <button onClick={(e) => { e.stopPropagation(); Sounds.qtyChange(); onQtyMinus(item.id); }}
-              style={{ background:"#EEEAE2", border:"1px solid var(--border)", color:"#1A2118", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
+              style={{ background: theme.isDark ? "var(--soft)" : "#EEEAE2", border:"1px solid var(--border)", color: theme.isDark ? "var(--textPrimary)" : "#1A2118", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
           )}
-          <span style={{ fontSize:14, fontWeight:800, minWidth:22, textAlign:"center" }}>{qty}</span>
+          <span style={{ fontSize:14, fontWeight:800, minWidth:22, textAlign:"center", color:"var(--textPrimary)" }}>{qty}</span>
           <button onClick={(e) => { e.stopPropagation(); Sounds.qtyChange(); onQtyPlus(item.id); }}
-            style={{ background:"#EEEAE2", border:"1px solid var(--border)", color:"#1A2118", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
+            style={{ background: theme.isDark ? "var(--soft)" : "#EEEAE2", border:"1px solid var(--border)", color: theme.isDark ? "var(--textPrimary)" : "#1A2118", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
         </div>
       </div>
     </div>

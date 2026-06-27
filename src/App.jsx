@@ -419,7 +419,7 @@ const makeStyles = (theme) => ({
     gap: 10,
     position: "sticky", top: 0, zIndex: 10,
   },
-  body: { flex: 1, minHeight: 0, overflowY: "auto", padding: "8px 0 96px" },
+  body: { flex: 1, minHeight: 0, overflowY: "auto", padding: "8px 0", paddingBottom: "calc(var(--bottombar-h, 64px) + 72px)" },
   // bottomBar height is exposed as --bottombar-h (see :root injection below) so
   // the FAB above it can derive its offset from the bar's real height instead of
   // a hardcoded magic number that breaks the moment padding/content changes.
@@ -1557,7 +1557,7 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
 
           {/* name + price – no strikethrough, just softened */}
           <div style={{ flex:1, minWidth:0 }}>
-            <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"var(--accentDark)", opacity:.9 }}>{item.name}</span>
+            <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"var(--textPrimary)", opacity:.9 }}>{item.name}</span>
             {item.price && (
               <span style={{ fontSize:11, color:"var(--accent)", fontWeight:600 }}>{sym}{Math.round(subtotal).toLocaleString()}</span>
             )}
@@ -1594,7 +1594,7 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
           <span style={{ fontSize:22, width:30, textAlign:"center", flexShrink:0 }}><ItemIcon name={item.name} category={item.category} emoji={item.emoji} size={30} emojiSize={22}/></span>
 
           <div style={{ flex:1, minWidth:0 }}>
-            <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{item.name}</span>
+            <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"var(--textPrimary)" }}>{item.name}</span>
             <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:3 }}>
               {isEditingPrice ? (
                 <input autoFocus type="number" placeholder="0" value={tempPrice}

@@ -4125,17 +4125,28 @@ export default function SuperLista() {
     document.head.appendChild(el);
   }, []);
 
-    const listsWriteTimer = useRef(null);
-  useEffect(() => {
-    // Debounce — checked items fire many rapid state updates; batch the write
-    clearTimeout(listsWriteTimer.current);
-    listsWriteTimer.current = setTimeout(() => LS.set("sl5_lists", lists), 400);
-    return () => clearTimeout(listsWriteTimer.current);
-  }, [lists]);
-  useEffect(() => { LS.set("sl5_settings", settings); }, [settings]);
-  useEffect(() => { LS.set("sl5_profile",  profile);  }, [profile]);
-  useEffect(() => { LS.set("sl5_history",  history);  }, [history]);
-  useEffect(() => { LS.set("sl5_theme",    themeName); }, [themeName]);
+  // ── localStorage writes — debounced + content-compared ─────────────────────
+  // All keys use the same pattern: wait 400 ms after the last change, then
+  // only write if the serialised value actually differs from what's already
+  // stored. This means rapid state updates (checking items, typing) collapse
+  // into a single write, and no-op renders (same value, different reference)
+  // never touch the disk at all.
+  const lsTimers = useRef({});
+  const lsWrite = useCallback((key, value) => {
+    clearTimeout(lsTimers.current[key]);
+    lsTimers.current[key] = setTimeout(() => {
+      const next = JSON.stringify(value);
+      try {
+        if (localStorage.getItem(key) !== next) localStorage.setItem(key, next);
+      } catch {}
+    }, 400);
+  }, []);
+
+  useEffect(() => { lsWrite("sl5_lists",    lists);     }, [lists,     lsWrite]);
+  useEffect(() => { lsWrite("sl5_settings", settings);  }, [settings,  lsWrite]);
+  useEffect(() => { lsWrite("sl5_profile",  profile);   }, [profile,   lsWrite]);
+  useEffect(() => { lsWrite("sl5_history",  history);   }, [history,   lsWrite]);
+  useEffect(() => { lsWrite("sl5_theme",    themeName); }, [themeName, lsWrite]);
 
   // ── Supabase cloud sync — mirrors every LS write to the cloud ─────────────
   // localStorage stays as the instant read/write cache; Supabase is the

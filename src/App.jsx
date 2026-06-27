@@ -4313,7 +4313,22 @@ export default function SuperLista() {
   const addItem    = useCallback((item) => setLists(prev => prev.map(l => l.id===activeListId ? { ...l, items:[...l.items,item] } : l)), [activeListId]);
 
   const closeSession = useCallback((session) => {
-    setHistory(prev => [...prev, session]);
+    // Slim the session before storing — only keep what StatsView actually reads.
+    // Full item objects (name, emoji, stage, id, note…) are not needed for stats
+    // and would bloat sl5_history quickly. Cap at 120 entries (~10 years of
+    // monthly shops) so localStorage never grows unbounded.
+    const slimSession = {
+      date:      session.date,
+      total:     session.total,
+      itemCount: session.itemCount,
+      listName:  session.listName,
+      items: (session.items || []).map(it => ({
+        category: it.category || "Otros",
+        price:    it.price    || 0,
+        qty:      it.qty      || 1,
+      })),
+    };
+    setHistory(prev => [...prev, slimSession].slice(-120));
     // "Cerrar compra" empties the cart: only items that were in the cart return to Inventario.
     // Items still sitting in Lista de Compras (never added to the cart) are left untouched.
     setLists(prev => prev.map(l => l.id===activeListId

@@ -1573,38 +1573,38 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
   // ── Shopping-list item: "in lista de compras" style ────────────────────────
   if (stage === "shopping") {
     return (
-      <div ref={wrapRef} className="item-stagger" style={{ position:"relative", overflow:"hidden", borderBottom:"1px solid #EFEAE0", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemSpring .30s var(--ease-spring) both", contain:"layout style paint", willChange:"transform" }}>
+      <div ref={wrapRef} className="item-stagger" style={{ position:"relative", overflow:"hidden", borderBottom:"1px solid var(--sl-row-divider,#EFEAE0)", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemSpring .30s var(--ease-spring) both", contain:"layout style paint", willChange:"transform" }}>
         <div className="sl-bg-left"  style={{ position:"absolute", inset:0, background:"#FDF1D6", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-end",  paddingRight:22, fontSize:14, fontWeight:700, color:"#B45309", gap:8, transition:"opacity .12s ease" }}>↩ A inventario</div>
-        <div className="sl-bg-right" style={{ position:"absolute", inset:0, background:"#DCEFF9", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-start", paddingLeft:22, fontSize:14, fontWeight:700, color:"#0369A1", gap:8, transition:"opacity .12s ease" }}>🛍 Al carrito</div>
+        <div className="sl-bg-right" style={{ position:"absolute", inset:0, background:"var(--sl-swipe-right-bg,#DCEFF9)", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-start", paddingLeft:22, fontSize:14, fontWeight:700, color:"var(--sl-swipe-right-color,#0369A1)", gap:8, transition:"opacity .12s ease" }}>🛍 Al carrito</div>
         <div ref={rowRef}
-          style={{ display:"flex", alignItems:"center", padding:"11px 14px", gap:10, background:"#F3FAFE", position:"relative", touchAction:"pan-y", userSelect:"none", transition:"background .15s", cursor:"pointer", willChange:"transform" }}
+          style={{ display:"flex", alignItems:"center", padding:"11px 14px", gap:10, background:"var(--sl-shopping-bg,#F3FAFE)", position:"relative", touchAction:"pan-y", userSelect:"none", transition:"background .15s", cursor:"pointer", willChange:"transform" }}
           onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd}
           onMouseDown={onStart} onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
           onClick={(e) => { if (!swipeState.current.hasMoved && !e.target.closest("button") && !e.target.closest("input")) handleCheck(e); }}
           onContextMenu={(e) => { e.preventDefault(); onContextMenu(item.id); }}>
 
           <button onClick={handleCheck}
-            style={{ width:28, height:28, borderRadius:"50%", border:"2px solid #7DD3FC", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, background:"transparent", fontSize:14, fontWeight:"bold", transition:"border-color .2s, transform .15s" }}
-            onMouseDown={(e) => { e.currentTarget.style.transform="scale(0.85)"; e.currentTarget.style.borderColor="#0369A1"; }}
-            onMouseUp={(e)   => { e.currentTarget.style.transform="scale(1)"; e.currentTarget.style.borderColor="#7DD3FC"; }}
-            onTouchStart={(e) => { e.currentTarget.style.transform="scale(0.85)"; e.currentTarget.style.borderColor="#0369A1"; }}
-            onTouchEnd={(e)   => { e.currentTarget.style.transform="scale(1)"; e.currentTarget.style.borderColor="#7DD3FC"; }}>
+            style={{ width:28, height:28, borderRadius:"50%", border:"2px solid var(--sl-check-ring,#7DD3FC)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, background:"transparent", fontSize:14, fontWeight:"bold", transition:"border-color .2s, transform .15s" }}
+            onMouseDown={(e) => { e.currentTarget.style.transform="scale(0.85)"; e.currentTarget.style.borderColor="var(--sl-check-ring-active,#0369A1)"; }}
+            onMouseUp={(e)   => { e.currentTarget.style.transform="scale(1)"; e.currentTarget.style.borderColor="var(--sl-check-ring,#7DD3FC)"; }}
+            onTouchStart={(e) => { e.currentTarget.style.transform="scale(0.85)"; e.currentTarget.style.borderColor="var(--sl-check-ring-active,#0369A1)"; }}
+            onTouchEnd={(e)   => { e.currentTarget.style.transform="scale(1)"; e.currentTarget.style.borderColor="var(--sl-check-ring,#7DD3FC)"; }}>
           </button>
 
           <span style={{ fontSize:22, width:30, textAlign:"center", flexShrink:0 }}><ItemIcon name={item.name} category={item.category} emoji={item.emoji} size={30} emojiSize={22}/></span>
 
           <div style={{ flex:1, minWidth:0 }}>
-            <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{item.name}</span>
+            <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"var(--sl-item-name-color,#1A2118)" }}>{item.name}</span>
             <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:3 }}>
               {isEditingPrice ? (
                 <input autoFocus type="number" placeholder="0" value={tempPrice}
                   onChange={(e) => setTempPrice(e.target.value)}
                   onBlur={() => savePrice(item.id)}
                   onKeyDown={(e) => e.key==="Enter" && savePrice(item.id)}
-                  style={{ background:"#FFFFFF", border:"1.5px solid #0369A1", borderRadius:"var(--radius-sm,10px)", color:"#0369A1", fontSize:13, width:80, padding:"2px 6px", textAlign:"right", outline:"none" }} />
+                  style={{ background:"var(--sl-price-input-bg,#FFFFFF)", border:"1.5px solid var(--sl-price-input-border,#0369A1)", borderRadius:"var(--radius-sm,10px)", color:"var(--sl-price-input-color,#0369A1)", fontSize:13, width:80, padding:"2px 6px", textAlign:"right", outline:"none" }} />
               ) : (
                 <button onClick={(e) => { e.stopPropagation(); setEditingPriceId(item.id); setTempPrice(item.price||""); }}
-                  style={{ background:"none", border:"none", color:item.price?"#0369A1":"#AAA", fontSize:12, cursor:"pointer", padding:0, textDecoration:"underline dotted" }}>
+                  style={{ background:"none", border:"none", color:item.price?"var(--sl-price-link,#0369A1)":"#AAA", fontSize:12, cursor:"pointer", padding:0, textDecoration:"underline dotted" }}>
                   {item.price ? `${sym}${Math.round(subtotal).toLocaleString()}` : "+ precio"}
                 </button>
               )}
@@ -1617,11 +1617,11 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
 
   // ── Inventory item ──────────────────────────────────────────────────────────
   return (
-    <div ref={wrapRef} className="item-stagger" style={{ position:"relative", overflow:"hidden", borderBottom:"1px solid #EFEAE0", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemSpring .30s var(--ease-spring) both", contain:"layout style paint", willChange:"transform" }}>
+    <div ref={wrapRef} className="item-stagger" style={{ position:"relative", overflow:"hidden", borderBottom:"1px solid var(--sl-row-divider,#EFEAE0)", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemSpring .30s var(--ease-spring) both", contain:"layout style paint", willChange:"transform" }}>
       <div className="sl-bg-left"  style={{ position:"absolute", inset:0, background:"#FBDADA", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-end",  paddingRight:22, fontSize:14, fontWeight:700, color:"#EF4444", gap:8, transition:"opacity .12s ease" }}>🗑 Eliminar</div>
       <div className="sl-bg-right" style={{ position:"absolute", inset:0, background:"color-mix(in srgb, var(--accent) 13%, var(--cardBg))", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-start", paddingLeft:22, fontSize:14, fontWeight:700, color:"var(--accentDark)", gap:8, transition:"opacity .12s ease" }}>✓ Seleccionar</div>
       <div ref={rowRef}
-        style={{ display:"flex", alignItems:"center", padding:"11px 14px", gap:10, background:"#FEFCF9", position:"relative", touchAction:"pan-y", userSelect:"none", transition:"background .15s", cursor:"pointer", willChange:"transform" }}
+        style={{ display:"flex", alignItems:"center", padding:"11px 14px", gap:10, background:"var(--sl-inventory-bg,#FEFCF9)", position:"relative", touchAction:"pan-y", userSelect:"none", transition:"background .15s", cursor:"pointer", willChange:"transform" }}
         onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd}
         onMouseDown={onStart} onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
         onClick={(e) => { if (!swipeState.current.hasMoved && !e.target.closest("button") && !e.target.closest("input")) handleCheck(e); }}
@@ -1638,7 +1638,7 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
         <span style={{ fontSize:22, width:30, textAlign:"center", flexShrink:0 }}><ItemIcon name={item.name} category={item.category} emoji={item.emoji} size={30} emojiSize={22}/></span>
 
         <div style={{ flex:1, minWidth:0 }}>
-          <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{item.name}</span>
+          <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"var(--sl-item-name-color,#1A2118)" }}>{item.name}</span>
           <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:3 }}>
             {isEditingPrice ? (
               <input autoFocus type="number" placeholder="0" value={tempPrice}
@@ -2160,16 +2160,16 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
 
         {/* ── Lista de Compras: header colapsable, con subtotal propio ── */}
         {shopping.length>0 && (
-          <div style={{ display:"flex", alignItems:"center", padding:"9px 12px 9px 16px", borderTop:"1px solid #DCEFF9", background:"#EAF5FB", gap:8 }}>
+          <div style={{ display:"flex", alignItems:"center", padding:"9px 12px 9px 16px", borderTop:"1px solid var(--sl-section-shopping-border,#DCEFF9)", background:"var(--sl-section-shopping-bg,#EAF5FB)", gap:8 }}>
             <button onClick={() => setShowShopping(v => !v)}
-              style={{ background:"none", border:"none", color:"#0369A1", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:5, padding:0, fontWeight:700, flex:1, minWidth:0 }}>
+              style={{ background:"none", border:"none", color:"var(--sl-section-shopping-color,#0369A1)", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:5, padding:0, fontWeight:700, flex:1, minWidth:0 }}>
               <span style={{ fontSize:10, transition:"transform .2s", display:"inline-block", transform: showShopping ? "rotate(0deg)" : "rotate(-90deg)", opacity:.7 }}>▼</span>
               <span style={{ fontSize:15, lineHeight:1 }}>📝</span>
-              <span style={{ fontSize:13, color:"#2C2318", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+              <span style={{ fontSize:13, color:"var(--sl-section-text,#2C2318)", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                 {shopping.length === 1 ? "1 en lista de compras" : `${shopping.length} en lista de compras`}
               </span>
               {shoppingCost > 0 && (
-                <span style={{ fontSize:12, color:"#0369A1", fontWeight:800, background:"#FFFFFF", borderRadius:"var(--radius-sm,10px)", padding:"1px 7px", marginLeft:2, flexShrink:0 }}>
+                <span style={{ fontSize:12, color:"var(--sl-section-shopping-color,#0369A1)", fontWeight:800, background:"var(--sl-section-badge-bg,#FFFFFF)", borderRadius:"var(--radius-sm,10px)", padding:"1px 7px", marginLeft:2, flexShrink:0 }}>
                   {sym}{Math.round(shoppingCost).toLocaleString()}
                 </span>
               )}
@@ -2190,13 +2190,13 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
 
         {/* ── En el Carrito de Compras: header colapsable, con subtotal propio ── */}
         {cart.length>0 && (
-          <div style={{ display:"flex", alignItems:"center", padding:"9px 12px 9px 16px", borderTop:"1px solid #DCF4DE", background:"#ECF6ED", gap:8 }}>
+          <div style={{ display:"flex", alignItems:"center", padding:"9px 12px 9px 16px", borderTop:"1px solid var(--sl-section-cart-border,#DCF4DE)", background:"var(--sl-section-cart-bg,#ECF6ED)", gap:8 }}>
             {/* Collapse toggle + label */}
             <button onClick={() => setShowCart(v => !v)}
               style={{ background:"none", border:"none", color:"var(--accentDark)", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:5, padding:0, fontWeight:700, flex:1, minWidth:0 }}>
               <span style={{ fontSize:10, transition:"transform .2s", display:"inline-block", transform: showCart ? "rotate(0deg)" : "rotate(-90deg)", opacity:.7 }}>▼</span>
               <span style={{ fontSize:15, lineHeight:1 }}>🛍</span>
-              <span style={{ fontSize:13, color:"#2C2318", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+              <span style={{ fontSize:13, color:"var(--sl-section-text,#2C2318)", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                 {cart.length === 1 ? "1 en el carrito" : `${cart.length} en el carrito`}
               </span>
               {inBagCost > 0 && (
@@ -3592,6 +3592,36 @@ body {
 
 .wc-item-row:active { transform:scale(0.997); }
 
+
+/* ── Saprissa (moon) — shopping/inventory row & section header overrides ────
+   All hardcoded light blues and creams become morado-aware.
+   Variables are set here so SwipeItem (which has no theme prop) picks them up
+   via CSS cascade without needing a React prop change.                        */
+[data-theme="moon"] {
+  /* Shopping row */
+  --sl-shopping-bg:             #2D0A48;
+  --sl-swipe-right-bg:          rgba(139,63,200,0.35);
+  --sl-swipe-right-color:       #D4B8F0;
+  --sl-check-ring:              rgba(139,63,200,0.60);
+  --sl-check-ring-active:       #8B3FC8;
+  --sl-price-input-bg:          #3D1465;
+  --sl-price-input-border:      #8B3FC8;
+  --sl-price-input-color:       #D4B8F0;
+  --sl-price-link:              #B06BE0;
+  /* Inventory row */
+  --sl-inventory-bg:            #2D0A48;
+  /* Shared */
+  --sl-row-divider:             rgba(91,26,142,0.30);
+  --sl-item-name-color:         #FFFFFF;
+  /* Section headers */
+  --sl-section-shopping-bg:     #3D1465;
+  --sl-section-shopping-border: rgba(91,26,142,0.50);
+  --sl-section-shopping-color:  #D4B8F0;
+  --sl-section-cart-bg:         rgba(61,20,101,0.85);
+  --sl-section-cart-border:     rgba(91,26,142,0.50);
+  --sl-section-text:            #FFFFFF;
+  --sl-section-badge-bg:        rgba(91,26,142,0.55);
+}
 [data-theme="moon"] .wc-item-row {
   background: #2D0A48;
   border-color: #5B1A8E;

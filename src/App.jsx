@@ -419,7 +419,7 @@ const makeStyles = (theme) => ({
     gap: 10,
     position: "sticky", top: 0, zIndex: 10,
   },
-  body: { flex: 1, minHeight: 0, overflowY: "auto", padding: "8px 0", paddingBottom: "calc(var(--bottombar-h, 64px) + 72px)" },
+  body: { flex: 1, minHeight: 0, overflowY: "auto", padding: "8px 0 96px" },
   // bottomBar height is exposed as --bottombar-h (see :root injection below) so
   // the FAB above it can derive its offset from the bar's real height instead of
   // a hardcoded magic number that breaks the moment padding/content changes.
@@ -1050,7 +1050,7 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
                     <input autoFocus type="number" value={newAmt} onChange={e => setNewAmt(e.target.value)}
                       onKeyDown={e => { if(e.key==="Enter") confirmAmt(); if(e.key==="Escape") { setAddingAmt(false); setNewAmt(""); } }}
                       placeholder="ej. 15000"
-                      style={{ width:90, background: theme.isDark ? "var(--cardBg)" : "#FEFCF9", border:"1.5px solid var(--accent)", borderRadius:20, padding:"7px 10px", color:"var(--textPrimary)", fontSize:13, outline:"none", textAlign:"center" }} />
+                      style={{ width:90, background:"#FEFCF9", border:"1.5px solid var(--accent)", borderRadius:20, padding:"7px 10px", color:"#2C2318", fontSize:13, outline:"none", textAlign:"center" }} />
                     <button onClick={confirmAmt} style={{ background:"var(--accent)", border:"none", borderRadius:"50%", width:28, height:28, color:"#111", fontSize:16, fontWeight:900, cursor:"pointer" }}>✓</button>
                   </div>
                 ) : (
@@ -1371,7 +1371,7 @@ function EditModal({ item, onClose, onSave, sym }) {
           <button style={qtyEditBtn} onClick={() => setQty(q => Math.max(1,q-1))}>−</button>
           <span style={{ fontSize:18, fontWeight:800, minWidth:36, textAlign:"center", lineHeight:"40px" }}>{qty}</span>
           <button style={qtyEditBtn} onClick={() => setQty(q => q+1)}>+</button>
-          <select value={unit} onChange={(e) => setUnit(e.target.value)} style={{ background: theme.isDark ? "var(--soft)" : "#EEEAE2", border:"1px solid var(--border)", borderRadius:"var(--radius-sm,10px)", color:"var(--textPrimary)", padding:"0 10px", fontSize:14, height:40, fontFamily:"inherit" }}>
+          <select value={unit} onChange={(e) => setUnit(e.target.value)} style={{ background:"#EEEAE2", border:"1px solid var(--border)", borderRadius:"var(--radius-sm,10px)", color:"#1A2118", padding:"0 10px", fontSize:14, height:40, fontFamily:"inherit" }}>
             {UNITS.map(u => <option key={u}>{u}</option>)}
           </select>
         </div>
@@ -1557,7 +1557,7 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
 
           {/* name + price – no strikethrough, just softened */}
           <div style={{ flex:1, minWidth:0 }}>
-            <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"var(--textPrimary)", opacity:.9 }}>{item.name}</span>
+            <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"var(--accentDark)", opacity:.9 }}>{item.name}</span>
             {item.price && (
               <span style={{ fontSize:11, color:"var(--accent)", fontWeight:600 }}>{sym}{Math.round(subtotal).toLocaleString()}</span>
             )}
@@ -1573,11 +1573,11 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
   // ── Shopping-list item: "in lista de compras" style ────────────────────────
   if (stage === "shopping") {
     return (
-      <div ref={wrapRef} className="item-stagger" style={{ position:"relative", overflow:"hidden", borderBottom: theme.isDark ? "1px solid var(--border)" : "1px solid #EFEAE0", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemSpring .30s var(--ease-spring) both", contain:"layout style paint", willChange:"transform" }}>
+      <div ref={wrapRef} className="item-stagger" style={{ position:"relative", overflow:"hidden", borderBottom:"1px solid #EFEAE0", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemSpring .30s var(--ease-spring) both", contain:"layout style paint", willChange:"transform" }}>
         <div className="sl-bg-left"  style={{ position:"absolute", inset:0, background:"#FDF1D6", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-end",  paddingRight:22, fontSize:14, fontWeight:700, color:"#B45309", gap:8, transition:"opacity .12s ease" }}>↩ A inventario</div>
         <div className="sl-bg-right" style={{ position:"absolute", inset:0, background:"#DCEFF9", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-start", paddingLeft:22, fontSize:14, fontWeight:700, color:"#0369A1", gap:8, transition:"opacity .12s ease" }}>🛍 Al carrito</div>
         <div ref={rowRef}
-          style={{ display:"flex", alignItems:"center", padding:"11px 14px", gap:10, background: theme.isDark ? "var(--cardBg)" : "#F3FAFE", position:"relative", touchAction:"pan-y", userSelect:"none", transition:"background .15s", cursor:"pointer", willChange:"transform" }}
+          style={{ display:"flex", alignItems:"center", padding:"11px 14px", gap:10, background:"#F3FAFE", position:"relative", touchAction:"pan-y", userSelect:"none", transition:"background .15s", cursor:"pointer", willChange:"transform" }}
           onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd}
           onMouseDown={onStart} onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
           onClick={(e) => { if (!swipeState.current.hasMoved && !e.target.closest("button") && !e.target.closest("input")) handleCheck(e); }}
@@ -1594,17 +1594,17 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
           <span style={{ fontSize:22, width:30, textAlign:"center", flexShrink:0 }}><ItemIcon name={item.name} category={item.category} emoji={item.emoji} size={30} emojiSize={22}/></span>
 
           <div style={{ flex:1, minWidth:0 }}>
-            <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"var(--textPrimary)" }}>{item.name}</span>
+            <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{item.name}</span>
             <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:3 }}>
               {isEditingPrice ? (
                 <input autoFocus type="number" placeholder="0" value={tempPrice}
                   onChange={(e) => setTempPrice(e.target.value)}
                   onBlur={() => savePrice(item.id)}
                   onKeyDown={(e) => e.key==="Enter" && savePrice(item.id)}
-                  style={{ background: theme.isDark ? "var(--cardBg)" : "#FFFFFF", border: theme.isDark ? "1.5px solid var(--border)" : "1.5px solid #0369A1", borderRadius:"var(--radius-sm,10px)", color: theme.isDark ? "var(--textPrimary)" : "#0369A1", fontSize:13, width:80, padding:"2px 6px", textAlign:"right", outline:"none" }} />
+                  style={{ background:"#FFFFFF", border:"1.5px solid #0369A1", borderRadius:"var(--radius-sm,10px)", color:"#0369A1", fontSize:13, width:80, padding:"2px 6px", textAlign:"right", outline:"none" }} />
               ) : (
                 <button onClick={(e) => { e.stopPropagation(); setEditingPriceId(item.id); setTempPrice(item.price||""); }}
-                  style={{ background:"none", border:"none", color: theme.isDark ? (item.price ? "var(--accentLight)" : "var(--textMuted)") : (item.price ? "#0369A1" : "#AAA"), fontSize:12, cursor:"pointer", padding:0, textDecoration:"underline dotted" }}>
+                  style={{ background:"none", border:"none", color:item.price?"#0369A1":"#AAA", fontSize:12, cursor:"pointer", padding:0, textDecoration:"underline dotted" }}>
                   {item.price ? `${sym}${Math.round(subtotal).toLocaleString()}` : "+ precio"}
                 </button>
               )}
@@ -1617,11 +1617,11 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
 
   // ── Inventory item ──────────────────────────────────────────────────────────
   return (
-    <div ref={wrapRef} className="item-stagger" style={{ position:"relative", overflow:"hidden", borderBottom: theme.isDark ? "1px solid var(--border)" : "1px solid #EFEAE0", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemSpring .30s var(--ease-spring) both", contain:"layout style paint", willChange:"transform" }}>
+    <div ref={wrapRef} className="item-stagger" style={{ position:"relative", overflow:"hidden", borderBottom:"1px solid #EFEAE0", animation: exiting ? "slCheckExit .16s ease forwards" : "slItemSpring .30s var(--ease-spring) both", contain:"layout style paint", willChange:"transform" }}>
       <div className="sl-bg-left"  style={{ position:"absolute", inset:0, background:"#FBDADA", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-end",  paddingRight:22, fontSize:14, fontWeight:700, color:"#EF4444", gap:8, transition:"opacity .12s ease" }}>🗑 Eliminar</div>
       <div className="sl-bg-right" style={{ position:"absolute", inset:0, background:"color-mix(in srgb, var(--accent) 13%, var(--cardBg))", opacity:0, display:"flex", alignItems:"center", justifyContent:"flex-start", paddingLeft:22, fontSize:14, fontWeight:700, color:"var(--accentDark)", gap:8, transition:"opacity .12s ease" }}>✓ Seleccionar</div>
       <div ref={rowRef}
-        style={{ display:"flex", alignItems:"center", padding:"11px 14px", gap:10, background: theme.isDark ? "var(--cardBg)" : "#FEFCF9", position:"relative", touchAction:"pan-y", userSelect:"none", transition:"background .15s", cursor:"pointer", willChange:"transform" }}
+        style={{ display:"flex", alignItems:"center", padding:"11px 14px", gap:10, background:"#FEFCF9", position:"relative", touchAction:"pan-y", userSelect:"none", transition:"background .15s", cursor:"pointer", willChange:"transform" }}
         onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd}
         onMouseDown={onStart} onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
         onClick={(e) => { if (!swipeState.current.hasMoved && !e.target.closest("button") && !e.target.closest("input")) handleCheck(e); }}
@@ -1638,7 +1638,7 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
         <span style={{ fontSize:22, width:30, textAlign:"center", flexShrink:0 }}><ItemIcon name={item.name} category={item.category} emoji={item.emoji} size={30} emojiSize={22}/></span>
 
         <div style={{ flex:1, minWidth:0 }}>
-          <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", color:"var(--textPrimary)" }}>{item.name}</span>
+          <span style={{ fontSize:15, fontWeight:600, display:"block", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{item.name}</span>
           <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:3 }}>
             {isEditingPrice ? (
               <input autoFocus type="number" placeholder="0" value={tempPrice}
@@ -1662,11 +1662,11 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
               style={{ background:"#FCE5E5", border:"none", color:"#EF4444", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>🗑</button>
           ) : (
             <button onClick={(e) => { e.stopPropagation(); Sounds.qtyChange(); onQtyMinus(item.id); }}
-              style={{ background: theme.isDark ? "var(--soft)" : "#EEEAE2", border:"1px solid var(--border)", color: theme.isDark ? "var(--textPrimary)" : "#1A2118", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
+              style={{ background:"#EEEAE2", border:"1px solid var(--border)", color:"#1A2118", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
           )}
-          <span style={{ fontSize:14, fontWeight:800, minWidth:22, textAlign:"center", color:"var(--textPrimary)" }}>{qty}</span>
+          <span style={{ fontSize:14, fontWeight:800, minWidth:22, textAlign:"center" }}>{qty}</span>
           <button onClick={(e) => { e.stopPropagation(); Sounds.qtyChange(); onQtyPlus(item.id); }}
-            style={{ background: theme.isDark ? "var(--soft)" : "#EEEAE2", border:"1px solid var(--border)", color: theme.isDark ? "var(--textPrimary)" : "#1A2118", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
+            style={{ background:"#EEEAE2", border:"1px solid var(--border)", color:"#1A2118", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
         </div>
       </div>
     </div>
@@ -1829,7 +1829,7 @@ function ListsView({ lists, onOpenList, onDeleteList, onCreateList, sym, history
               <div key={i} style={{
                 position:"absolute", top:st.t, left:st.l,
                 width:st.s, height:st.s, borderRadius:"50%",
-                background: theme?.isDark ? (theme?.cardBg || "var(--cardBg)") : "#FEFCF9",
+                background:"#FEFCF9",
                 boxShadow:`0 0 ${st.s*4}px rgba(255,255,255,0.55)`,
                 animation:`starTwinkle ${2+i*0.4}s ease-in-out infinite`,
               }} />
@@ -2160,16 +2160,16 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
 
         {/* ── Lista de Compras: header colapsable, con subtotal propio ── */}
         {shopping.length>0 && (
-          <div style={{ display:"flex", alignItems:"center", padding:"9px 12px 9px 16px", borderTop: theme.isDark ? "1px solid var(--border)" : "1px solid #DCEFF9", background: theme.isDark ? "rgba(37,8,63,0.60)" : "#EAF5FB", gap:8 }}>
+          <div style={{ display:"flex", alignItems:"center", padding:"9px 12px 9px 16px", borderTop:"1px solid #DCEFF9", background:"#EAF5FB", gap:8 }}>
             <button onClick={() => setShowShopping(v => !v)}
-              style={{ background:"none", border:"none", color: theme.isDark ? "var(--textMuted)" : "#0369A1", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:5, padding:0, fontWeight:700, flex:1, minWidth:0 }}>
+              style={{ background:"none", border:"none", color:"#0369A1", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:5, padding:0, fontWeight:700, flex:1, minWidth:0 }}>
               <span style={{ fontSize:10, transition:"transform .2s", display:"inline-block", transform: showShopping ? "rotate(0deg)" : "rotate(-90deg)", opacity:.7 }}>▼</span>
               <span style={{ fontSize:15, lineHeight:1 }}>📝</span>
-              <span style={{ fontSize:13, color: theme.isDark ? "var(--textPrimary)" : "#2C2318", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+              <span style={{ fontSize:13, color:"#2C2318", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                 {shopping.length === 1 ? "1 en lista de compras" : `${shopping.length} en lista de compras`}
               </span>
               {shoppingCost > 0 && (
-                <span style={{ fontSize:12, color: theme.isDark ? "var(--textPrimary)" : "#0369A1", fontWeight:800, background: theme.isDark ? "var(--soft)" : "#FFFFFF", borderRadius:"var(--radius-sm,10px)", padding:"1px 7px", marginLeft:2, flexShrink:0 }}>
+                <span style={{ fontSize:12, color:"#0369A1", fontWeight:800, background:"#FFFFFF", borderRadius:"var(--radius-sm,10px)", padding:"1px 7px", marginLeft:2, flexShrink:0 }}>
                   {sym}{Math.round(shoppingCost).toLocaleString()}
                 </span>
               )}
@@ -2190,13 +2190,13 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
 
         {/* ── En el Carrito de Compras: header colapsable, con subtotal propio ── */}
         {cart.length>0 && (
-          <div style={{ display:"flex", alignItems:"center", padding:"9px 12px 9px 16px", borderTop: theme.isDark ? "1px solid var(--border)" : "1px solid #DCF4DE", background: theme.isDark ? "rgba(37,8,63,0.60)" : "#ECF6ED", gap:8 }}>
+          <div style={{ display:"flex", alignItems:"center", padding:"9px 12px 9px 16px", borderTop:"1px solid #DCF4DE", background:"#ECF6ED", gap:8 }}>
             {/* Collapse toggle + label */}
             <button onClick={() => setShowCart(v => !v)}
               style={{ background:"none", border:"none", color:"var(--accentDark)", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:5, padding:0, fontWeight:700, flex:1, minWidth:0 }}>
               <span style={{ fontSize:10, transition:"transform .2s", display:"inline-block", transform: showCart ? "rotate(0deg)" : "rotate(-90deg)", opacity:.7 }}>▼</span>
               <span style={{ fontSize:15, lineHeight:1 }}>🛍</span>
-              <span style={{ fontSize:13, color: theme.isDark ? "var(--textPrimary)" : "#2C2318", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+              <span style={{ fontSize:13, color:"#2C2318", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                 {cart.length === 1 ? "1 en el carrito" : `${cart.length} en el carrito`}
               </span>
               {inBagCost > 0 && (
@@ -2449,7 +2449,7 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
           </button>
           <input value={customName} onChange={e => handleCustomNameChange(e.target.value)} onKeyDown={e => e.key==="Enter" && addCustom()}
             placeholder="Nombre del artículo..."
-            style={{ flex:1, background: theme.isDark ? "var(--cardBg)" : "#FEFCF9", border:"1.5px solid var(--border)", borderRadius:"var(--radius-md,16px)", padding:"13px 14px", color:"var(--textPrimary)", fontSize:15, fontWeight:600, outline:"none", transition:"border-color .15s, box-shadow .15s", fontFamily:"inherit" }}
+            style={{ flex:1, background:"#FEFCF9", border:"1.5px solid var(--border)", borderRadius:"var(--radius-md,16px)", padding:"13px 14px", color:"#1A2118", fontSize:15, fontWeight:600, outline:"none", transition:"border-color .15s, box-shadow .15s", fontFamily:"inherit" }}
             onFocus={e => { e.target.style.borderColor="var(--accent)"; e.target.style.boxShadow="0 0 0 3px var(--soft)"; }}
             onBlur={e  => e.target.style.borderColor="#D8DDD6"} />
           <button onClick={(e) => addCustom(e)}
@@ -2464,14 +2464,14 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
           <input type="number" inputMode="decimal" placeholder="Precio (opcional)" value={customPrice}
             onChange={e => setCustomPrice(e.target.value)}
             onKeyDown={e => e.key==="Enter" && addCustom()}
-            style={{ flex:1, background: theme.isDark ? "var(--cardBg)" : "#FEFCF9", border:"1.5px solid var(--border)", borderRadius:"var(--radius-sm,10px)", padding:"9px 12px", color:"var(--textPrimary)", fontSize:14, fontWeight:600, outline:"none", transition:"border-color .15s, box-shadow .15s", fontFamily:"inherit" }}
+            style={{ flex:1, background:"#FEFCF9", border:"1.5px solid var(--border)", borderRadius:"var(--radius-sm,10px)", padding:"9px 12px", color:"#1A2118", fontSize:14, fontWeight:600, outline:"none", transition:"border-color .15s, box-shadow .15s", fontFamily:"inherit" }}
             onFocus={e => { e.target.style.borderColor="var(--accent)"; e.target.style.boxShadow="0 0 0 3px var(--soft)"; }}
             onBlur={e  => { e.target.style.borderColor="#D8DDD6"; e.target.style.boxShadow="none"; }} />
         </div>
 
         {/* ── Destino del artículo: Lista de Compras o Inventario ── */}
         <div style={{ marginTop:10, position:"relative" }}>
-          <div style={{ fontSize:10, fontWeight:700, color: theme.isDark ? "var(--textMuted)" : "#9E9285", letterSpacing:".06em", textTransform:"uppercase", marginBottom:6 }}>Agregar a</div>
+          <div style={{ fontSize:10, fontWeight:700, color:"#9E9285", letterSpacing:".06em", textTransform:"uppercase", marginBottom:6 }}>Agregar a</div>
           <div style={{ display:"flex", gap:8 }}>
             {[
               { value:"shopping", label:"Lista de compras", icon:"🛒" },
@@ -2512,8 +2512,8 @@ function AddItemsView({ list, onBack, onAddItem, sym, theme = {} }) {
 
         {/* ── Emoji palette (slides open) ── */}
         {showEmojiPicker && (
-          <div style={{ marginTop:12, background: theme.isDark ? "var(--cardBg)" : "#FEFCF9", border: theme.isDark ? "1px solid var(--border)" : "1px solid #E8E2D8", borderRadius:16, padding:"12px 10px", animation:"fadeIn .15s ease" }}>
-            <div style={{ fontSize:10, color: theme.isDark ? "var(--textMuted)" : "#B0A898", fontWeight:700, letterSpacing:".06em", textTransform:"uppercase", marginBottom:8, paddingLeft:2 }}>Elige un ícono</div>
+          <div style={{ marginTop:12, background:"#FEFCF9", border:"1px solid #E8E2D8", borderRadius:16, padding:"12px 10px", animation:"fadeIn .15s ease" }}>
+            <div style={{ fontSize:10, color:"#B0A898", fontWeight:700, letterSpacing:".06em", textTransform:"uppercase", marginBottom:8, paddingLeft:2 }}>Elige un ícono</div>
             <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
               {EMOJI_PALETTE.map(em => (
                 <button key={em} onClick={() => handleManualEmojiPick(em)}
@@ -4125,28 +4125,17 @@ export default function SuperLista() {
     document.head.appendChild(el);
   }, []);
 
-  // ── localStorage writes — debounced + content-compared ─────────────────────
-  // All keys use the same pattern: wait 400 ms after the last change, then
-  // only write if the serialised value actually differs from what's already
-  // stored. This means rapid state updates (checking items, typing) collapse
-  // into a single write, and no-op renders (same value, different reference)
-  // never touch the disk at all.
-  const lsTimers = useRef({});
-  const lsWrite = useCallback((key, value) => {
-    clearTimeout(lsTimers.current[key]);
-    lsTimers.current[key] = setTimeout(() => {
-      const next = JSON.stringify(value);
-      try {
-        if (localStorage.getItem(key) !== next) localStorage.setItem(key, next);
-      } catch {}
-    }, 400);
-  }, []);
-
-  useEffect(() => { lsWrite("sl5_lists",    lists);     }, [lists,     lsWrite]);
-  useEffect(() => { lsWrite("sl5_settings", settings);  }, [settings,  lsWrite]);
-  useEffect(() => { lsWrite("sl5_profile",  profile);   }, [profile,   lsWrite]);
-  useEffect(() => { lsWrite("sl5_history",  history);   }, [history,   lsWrite]);
-  useEffect(() => { lsWrite("sl5_theme",    themeName); }, [themeName, lsWrite]);
+    const listsWriteTimer = useRef(null);
+  useEffect(() => {
+    // Debounce — checked items fire many rapid state updates; batch the write
+    clearTimeout(listsWriteTimer.current);
+    listsWriteTimer.current = setTimeout(() => LS.set("sl5_lists", lists), 400);
+    return () => clearTimeout(listsWriteTimer.current);
+  }, [lists]);
+  useEffect(() => { LS.set("sl5_settings", settings); }, [settings]);
+  useEffect(() => { LS.set("sl5_profile",  profile);  }, [profile]);
+  useEffect(() => { LS.set("sl5_history",  history);  }, [history]);
+  useEffect(() => { LS.set("sl5_theme",    themeName); }, [themeName]);
 
   // ── Supabase cloud sync — mirrors every LS write to the cloud ─────────────
   // localStorage stays as the instant read/write cache; Supabase is the
@@ -4313,22 +4302,7 @@ export default function SuperLista() {
   const addItem    = useCallback((item) => setLists(prev => prev.map(l => l.id===activeListId ? { ...l, items:[...l.items,item] } : l)), [activeListId]);
 
   const closeSession = useCallback((session) => {
-    // Slim the session before storing — only keep what StatsView actually reads.
-    // Full item objects (name, emoji, stage, id, note…) are not needed for stats
-    // and would bloat sl5_history quickly. Cap at 120 entries (~10 years of
-    // monthly shops) so localStorage never grows unbounded.
-    const slimSession = {
-      date:      session.date,
-      total:     session.total,
-      itemCount: session.itemCount,
-      listName:  session.listName,
-      items: (session.items || []).map(it => ({
-        category: it.category || "Otros",
-        price:    it.price    || 0,
-        qty:      it.qty      || 1,
-      })),
-    };
-    setHistory(prev => [...prev, slimSession].slice(-120));
+    setHistory(prev => [...prev, session]);
     // "Cerrar compra" empties the cart: only items that were in the cart return to Inventario.
     // Items still sitting in Lista de Compras (never added to the cart) are left untouched.
     setLists(prev => prev.map(l => l.id===activeListId

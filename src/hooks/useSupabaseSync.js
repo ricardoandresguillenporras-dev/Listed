@@ -73,7 +73,27 @@ export function useSupabaseSync(table, value, setValue, defaultValue) {
       const remote = await cloudRead(table);
       if (cancelled) return;
       if (remote !== null) {
-        setValue(remote);
+        // Guard: only apply remote if it differs from what we already have locally.
+        // Without this, a slow Supabase response (500ms–2s) that resolves AFTER
+        // the user has already added/changed items will overwrite those changes
+        // with the stale cloud snapshot — causing items to silently disappear.
+        const remoteStr = JSON.stringify(remote);
+        const localStr  = JSON.stringify(latestValue.current);
+        if (remoteStr !== localStr) {
+          // Prefer whichever has more data. For arrays (lists, history) this means
+          // the longer one wins; for objects (settings, profile) we merge remote
+          // under local so the user's in-flight edits always survive.
+          const remoteIsArray = Array.isArray(remote);
+          const localIsArray  = Array.isArray(latestValue.current);
+          if (remoteIsArray && localIsArray) {
+            // If user added items while request was in flight, local is newer — keep it.
+            // If cloud has more items (e.g. another device synced), use cloud.
+            if (remote.length > latestValue.current.length) setValue(remote);
+          } else {
+            // For objects: merge remote into local so neither loses data.
+            setValue(prev => ({ ...remote, ...prev }));
+          }
+        }
       }
       hasMounted.current = true;
     })();

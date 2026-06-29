@@ -1665,6 +1665,20 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
               )}
             </div>
           </div>
+
+          {/* ── Qty controls — same as inventory ── */}
+          <div style={{ display:"flex", alignItems:"center", gap:2, flexShrink:0 }}>
+            {qty===1 ? (
+              <button onClick={(e) => { e.stopPropagation(); Sounds.deleteItem(); onDelete(item.id, stage); }}
+                style={{ background:"#FCE5E5", border:"none", color:"#EF4444", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>🗑</button>
+            ) : (
+              <button onClick={(e) => { e.stopPropagation(); Sounds.qtyChange(); onQtyMinus(item.id); }}
+                style={{ background:"var(--soft,#EEEAE2)", border:"1px solid var(--border)", color:"var(--textPrimary,#1A2118)", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>−</button>
+            )}
+            <span style={{ fontSize:14, fontWeight:800, minWidth:22, textAlign:"center", color:"var(--textPrimary,#1A2118)" }}>{qty}</span>
+            <button onClick={(e) => { e.stopPropagation(); Sounds.qtyChange(); onQtyPlus(item.id); }}
+              style={{ background:"var(--soft,#EEEAE2)", border:"1px solid var(--border)", color:"var(--textPrimary,#1A2118)", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
+          </div>
         </div>
       </div>
     );

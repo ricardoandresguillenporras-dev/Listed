@@ -395,7 +395,62 @@ const normalizeSearch = (str) =>
 
 // ── Stable default for useSupabaseSync — defined once at module level so
 // the object identity never changes between renders (avoids spurious effect triggers).
-const DEFAULT_LISTS = [{ id: "default", name: "Casa", items: [], createdAt: Date.now() }];
+const DEFAULT_LISTS = [{ id: "default", name: "Casa", createdAt: Date.now(), items: [
+    { id:"itm001", name:"Leche", emoji:"🥛", category:"Lácteos", stage:"inventory", checked:false, price:"1250", qty:1, unit:"pza", note:"" },
+    { id:"itm002", name:"Huevos", emoji:"🥚", category:"Lácteos", stage:"inventory", checked:false, price:"2800", qty:1, unit:"pza", note:"" },
+    { id:"itm003", name:"Mantequilla", emoji:"🧈", category:"Lácteos", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm004", name:"Natilla", emoji:"🥣", category:"Lácteos", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm005", name:"Queso", emoji:"🧀", category:"Lácteos", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm006", name:"Queso mozzarella", emoji:"🧀", category:"Lácteos", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm007", name:"Plátanos", emoji:"🍌", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm008", name:"Banano", emoji:"🍌", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm009", name:"Tomates", emoji:"🍅", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm010", name:"Aguacate", emoji:"🥑", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm011", name:"Espinacas", emoji:"🥬", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm012", name:"Brócoli", emoji:"🥦", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm013", name:"Zanahorias", emoji:"🥕", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm014", name:"Cebollas", emoji:"🧅", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm015", name:"Chile Dulce", emoji:"🫑", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm016", name:"Fresas", emoji:"🍓", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm017", name:"Hongos", emoji:"🍄", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm018", name:"Lechuga", emoji:"🥬", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm019", name:"Limones", emoji:"🍋", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm020", name:"Pepino", emoji:"🥒", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm021", name:"Zucchini", emoji:"🥒", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm022", name:"Gengibre", emoji:"🫚", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm023", name:"Ajo", emoji:"🧄", category:"Frutas y Verduras", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm024", name:"Miel", emoji:"🍯", category:"Despensa", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm025", name:"Aceite", emoji:"🫙", category:"Despensa", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm026", name:"Sal", emoji:"🧂", category:"Despensa", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm027", name:"Arroz", emoji:"🍚", category:"Despensa", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm028", name:"Pasta", emoji:"🍝", category:"Despensa", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm029", name:"Frijoles molidos", emoji:"🫘", category:"Despensa", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm030", name:"Garbanzos", emoji:"🫘", category:"Despensa", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm031", name:"Maíz", emoji:"🌽", category:"Despensa", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm032", name:"Atún con vegetales", emoji:"🐟", category:"Despensa", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm033", name:"Salsa Lizano", emoji:"🫙", category:"Despensa", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm034", name:"Salsas", emoji:"🫙", category:"Despensa", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm035", name:"Cornflakes", emoji:"🥣", category:"Despensa", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm036", name:"Barritas", emoji:"🍫", category:"Despensa", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm037", name:"Café", emoji:"☕", category:"Bebidas", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm038", name:"Cerdo", emoji:"🥩", category:"Carnes", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm039", name:"Pollo o carne", emoji:"🍗", category:"Carnes", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm040", name:"Jamón", emoji:"🥓", category:"Carnes", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm041", name:"Galletas", emoji:"🍪", category:"Panadería", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm042", name:"Tortillas", emoji:"🫓", category:"Panadería", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm043", name:"Pan Integral", emoji:"🍞", category:"Panadería", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm044", name:"Jabón de trastes", emoji:"🧼", category:"Higiene", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm045", name:"Papel de cocina", emoji:"🧻", category:"Higiene", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm046", name:"Papel Higiénico", emoji:"🧻", category:"Higiene", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm047", name:"Toallas nocturnas", emoji:"🩹", category:"Higiene", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm048", name:"Toallitas", emoji:"🧻", category:"Higiene", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm049", name:"Bolsas pequeñas", emoji:"🛍️", category:"Limpieza", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm050", name:"Bolsas grandes", emoji:"🛍️", category:"Limpieza", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm051", name:"Saneador", emoji:"🧴", category:"Limpieza", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm052", name:"Sanipine", emoji:"🧴", category:"Limpieza", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm053", name:"Suavizante", emoji:"🫧", category:"Limpieza", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" },
+    { id:"itm054", name:"Abrillantador", emoji:"✨", category:"Limpieza", stage:"inventory", checked:false, price:"", qty:1, unit:"pza", note:"" }
+  ] }];
 
 // ── Styles (theme-aware) ──────────────────────────────────────────────────────
 const makeStyles = (theme) => ({
@@ -4133,7 +4188,7 @@ button { transition:transform 0.15s var(--ease-spring), box-shadow 0.15s ease, b
 `;
 
 export default function SuperLista() {
-  const [lists,       setLists]       = useState(() => LS.get("sl5_lists",   [{ id:"default", name:"Casa", items:[], createdAt:Date.now() }]));
+  const [lists,       setLists]       = useState(() => LS.get("sl5_lists",   DEFAULT_LISTS));
   const [settings,    setSettings]    = useState(() => { const s = LS.get("sl5_settings", { currencyCode:"CRC" }); return { ...s, currencyCode: s.currencyCode || "CRC" }; });
   const [profile,     setProfile]     = useState(() => LS.get("sl5_profile", { name:"", budget:"" }));
   const [history,     setHistory]     = useState(() => LS.get("sl5_history", []));

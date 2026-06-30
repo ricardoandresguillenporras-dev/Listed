@@ -4392,7 +4392,7 @@ export default function SuperLista() {
       if (currentShowProfile) {
         Sounds.navBack();
         setShowProfile(false);
-        setNavActive("");
+        setNavActive(currentView === "stats" ? "stats" : "home");
         setProfileTab("profile");
         return;
       }
@@ -4616,7 +4616,7 @@ export default function SuperLista() {
       {showProfile && (
         <ProfileModal profile={profile} settings={settings} history={history}
           initialTab={profileTab}
-          onClose={() => { setShowProfile(false); setNavActive(""); setProfileTab("profile"); }}
+          onClose={() => { setShowProfile(false); setNavActive(view === "stats" ? "stats" : "home"); setProfileTab("profile"); }}
           onSaveProfile={(p) => setProfile(p)}
           onSaveSettings={(s) => setSettings(s)}
           onDeleteSession={handleDeleteSession} />

@@ -1002,7 +1002,7 @@ const CURRENCIES = [
   { code:"MXN", symbol:"$", label:"Peso mexicano",        flag:"🇲🇽" },
 ];
 
-function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSaveSettings, initialTab }) {
+function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSaveSettings, onDeleteSession, initialTab }) {
   const [name,   setName]   = useState(profile.name);
   const [budget, setBudget] = useState(profile.budget);
   const [currency, setCurrency] = useState(settings.currencyCode);
@@ -1059,7 +1059,7 @@ function ProfileModal({ profile, settings, history, onClose, onSaveProfile, onSa
         </div>
         <TopTabs tabs={[{id:"profile",label:"Perfil"},{id:"budget",label:"💰 Presupuesto"},{id:"currency",label:"Moneda"},{id:"household",label:"🏡 Hogar"}]} active={tab} onChange={setTab} theme={{isDark: false}} />
         <div style={{ overflowY:"auto", flex:1, padding: tab==="history" ? 0 : 20 }}>
-          {tab==="history" && <StatsView history={history} budget={profile.budget} sym={sym} />}
+          {tab==="history" && <StatsView history={history} budget={profile.budget} sym={sym} onDeleteSession={onDeleteSession} />}
           {tab==="profile" && <>
             <EditLabel>Nombre</EditLabel>
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="¿Cómo te llaman?" style={editInputStyle} />
@@ -2330,7 +2330,7 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
 
             {/* ── Chip "Cerrar compra" ── */}
             <button
-              onClick={(e) => { Sounds.checkout(); const colors=["#22C55E","#4ADE80","#FCD34D","#60A5FA","#F472B6","#A78BFA"]; celebrateCheckout(colors); ripple(e); onCloseSession({ total: inBagCost, items: list.items.filter(isInCart), listName: list.name, date: Date.now(), itemCount: done }); }}
+              onClick={(e) => { Sounds.checkout(); const colors=["#22C55E","#4ADE80","#FCD34D","#60A5FA","#F472B6","#A78BFA"]; celebrateCheckout(colors); ripple(e); onCloseSession({ id: genId(), total: inBagCost, items: list.items.filter(isInCart), listName: list.name, date: Date.now(), itemCount: done }); }}
               style={{
                 display:"flex", alignItems:"center", gap:5,
                 background:"linear-gradient(135deg,#22C55E 0%,#15803D 100%)",
@@ -3051,52 +3051,6 @@ function WeekComparison({ history, sym }) {
   );
 }
 
-// ── StreakBadge ───────────────────────────────────────────────────────────────
-function StreakBadge({ history }) {
-  // Streak = semanas consecutivas con al menos 1 compra
-  const getWeekKey = (d) => {
-    const date = new Date(d);
-    const day = date.getDay();
-    date.setDate(date.getDate() - day);
-    return `${date.getFullYear()}-W${Math.floor(date.getDate() / 7)}`;
-  };
-  const weeks = new Set(history.map((s) => getWeekKey(s.date)));
-  // count consecutive weeks back from now
-  let streak = 0;
-  const now = new Date();
-  for (let i = 0; i < 52; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i * 7);
-    if (weeks.has(getWeekKey(d.toISOString()))) streak++;
-    else if (i > 0) break;
-  }
-
-  const color = streak >= 8 ? "#f59e0b" : streak >= 4 ? "#a78bfa" : streak >= 2 ? "#22C55E" : "#555";
-  const emoji = streak >= 8 ? "🔥" : streak >= 4 ? "⚡" : streak >= 2 ? "✅" : "💤";
-
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <div style={{
-        width: 48, height: 48, borderRadius: 14,
-        background: `${color}22`,
-        border: `2px solid ${color}55`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 24, flexShrink: 0,
-      }}>
-        {emoji}
-      </div>
-      <div>
-        <div style={{ fontSize: 22, fontWeight: 900, color, lineHeight: 1 }}>
-          {streak} <span style={{ fontSize: 13, fontWeight: 600, color: "var(--textMuted)" }}>sem</span>
-        </div>
-        <div style={{ fontSize: 11, color: "var(--textMuted)", marginTop: 2 }}>
-          {streak === 0 ? "Sin compras recientes" : streak === 1 ? "Racha iniciada" : `Racha activa`}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── MostExpensive ─────────────────────────────────────────────────────────────
 function MostExpensiveItem({ sessions, sym }) {
   let best = null;
@@ -3124,8 +3078,10 @@ function MostExpensiveItem({ sessions, sym }) {
 }
 
 // ── MAIN StatsView ─────────────────────────────────────────────────────────────
-function StatsView({ history, budget, sym }) {
+function StatsView({ history, budget, sym, onDeleteSession }) {
   const [period, setPeriod] = useState("month"); // "month" | "q3" | "all"
+  const [expandedId, setExpandedId] = useState(null);
+  const [confirmId, setConfirmId] = useState(null);
   const budgetNum = parseFloat(budget) || 0;
   const now = new Date();
 
@@ -3388,16 +3344,10 @@ function StatsView({ history, budget, sym }) {
           </div>
         )}
 
-        {/* ── Streak + Artículo más caro ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <div style={cardStyle}>
-            <div style={labelStyle}>Racha semanal</div>
-            <StreakBadge history={history} />
-          </div>
-          <div style={cardStyle}>
-            <div style={labelStyle}>Ítem más caro</div>
-            <MostExpensiveItem sessions={sessions} sym={sym} />
-          </div>
+        {/* ── Artículo más caro ── */}
+        <div style={cardStyle}>
+          <div style={labelStyle}>Ítem más caro</div>
+          <MostExpensiveItem sessions={sessions} sym={sym} />
         </div>
 
         {/* ── Comparativo semanal ── */}
@@ -3426,31 +3376,135 @@ function StatsView({ history, budget, sym }) {
         {/* ── Historial lista ── */}
         {sessions.length > 0 && (
           <div style={cardStyle}>
-            <div style={labelStyle}>Registro de compras</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 0, marginTop: 6 }}>
-              {[...sessions].reverse().slice(0, 12).map((s, i, arr) => (
-                <div key={s.date + i} style={{
-                  display: "flex", justifyContent: "space-between", alignItems: "center",
-                  padding: "9px 0",
-                  borderBottom: i < arr.length - 1 ? `1px solid var(--border)` : "none",
-                }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--textPrimary)" }}>
-                      {s.listName || "Compra"}
-                    </div>
-                    <div style={{ fontSize: 10, color: "var(--textMuted)", marginTop: 1 }}>
-                      {fmtDate(s.date)} · {s.itemCount || (s.items?.length) || 0} art.
-                    </div>
-                  </div>
-                  <div style={{
-                    fontSize: 14, fontWeight: 900, color: "var(--accent)",
-                    background: "color-mix(in srgb, var(--accent) 10%, var(--cardBg))", borderRadius: 8,
-                    padding: "2px 8px",
+            <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between" }}>
+              <div style={labelStyle}>Registro de compras</div>
+              <span style={{ fontSize: 10, color: "var(--textMuted)", fontWeight: 600 }}>
+                {sessions.length} compra{sessions.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
+              {[...sessions].reverse().map((s) => {
+                const sid = s.id || s.date;
+                const isOpen = expandedId === sid;
+                const isConfirming = confirmId === sid;
+                const items = s.items || [];
+                return (
+                  <div key={sid} style={{
+                    border: "1px solid var(--border)",
+                    borderRadius: 14,
+                    overflow: "hidden",
+                    background: isOpen ? "color-mix(in srgb, var(--accent) 5%, var(--cardBg))" : "transparent",
+                    transition: "background .15s ease",
                   }}>
-                    {fmtAmt(safeTotal(s), sym)}
+                    {/* Fila principal — toca para expandir/colapsar */}
+                    <button
+                      onClick={() => { setExpandedId(isOpen ? null : sid); setConfirmId(null); }}
+                      style={{
+                        width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
+                        padding: "10px 10px 10px 12px", background: "none", border: "none", cursor: "pointer",
+                        fontFamily: "inherit", textAlign: "left",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                        <span style={{
+                          fontSize: 11, color: "var(--textMuted)", transform: isOpen ? "rotate(90deg)" : "none",
+                          transition: "transform .15s ease", flexShrink: 0,
+                        }}>▶</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--textPrimary)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                            {s.listName || "Compra"}
+                          </div>
+                          <div style={{ fontSize: 10, color: "var(--textMuted)", marginTop: 1 }}>
+                            {fmtDate(s.date)} · {s.itemCount || items.length || 0} art.
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{
+                        fontSize: 14, fontWeight: 900, color: "var(--accent)",
+                        background: "color-mix(in srgb, var(--accent) 10%, var(--cardBg))", borderRadius: 8,
+                        padding: "2px 8px", flexShrink: 0, marginLeft: 8,
+                      }}>
+                        {fmtAmt(safeTotal(s), sym)}
+                      </div>
+                    </button>
+
+                    {/* Detalle expandido — artículos de la compra + acción eliminar */}
+                    {isOpen && (
+                      <div style={{ padding: "0 12px 12px" }}>
+                        {items.length > 0 ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 10 }}>
+                            {items.map((it, idx) => (
+                              <div key={it.id || idx} style={{
+                                display: "flex", justifyContent: "space-between", alignItems: "center",
+                                padding: "6px 0",
+                                borderTop: "1px solid var(--cardBorder)",
+                              }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+                                  <span style={{ fontSize: 14, flexShrink: 0 }}>{it.emoji || "🛒"}</span>
+                                  <span style={{ fontSize: 12, color: "var(--textPrimary)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                                    {it.name}
+                                  </span>
+                                  {(it.qty || 1) > 1 && (
+                                    <span style={{ fontSize: 10, color: "var(--textMuted)", flexShrink: 0 }}>×{it.qty}</span>
+                                  )}
+                                </div>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--textMuted)", flexShrink: 0, marginLeft: 8 }}>
+                                  {fmtAmt((parseFloat(it.price) || 0) * (it.qty || 1), sym)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: 11, color: "var(--textMuted)", padding: "6px 0 10px" }}>
+                            Sin artículos registrados para esta compra.
+                          </div>
+                        )}
+
+                        {/* Acción eliminar — confirmación en dos pasos para evitar borrados accidentales */}
+                        {!isConfirming ? (
+                          <button
+                            onClick={() => setConfirmId(sid)}
+                            style={{
+                              display: "flex", alignItems: "center", gap: 6,
+                              background: "none", border: "1px solid color-mix(in srgb, #ef4444 35%, var(--cardBorder))",
+                              color: "#ef4444", fontSize: 12, fontWeight: 700,
+                              borderRadius: 10, padding: "7px 12px", cursor: "pointer", fontFamily: "inherit",
+                            }}
+                          >
+                            🗑️ Eliminar compra
+                          </button>
+                        ) : (
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 11, color: "var(--textPrimary)", fontWeight: 600, flex: 1 }}>
+                              ¿Eliminar esta compra?
+                            </span>
+                            <button
+                              onClick={() => { setConfirmId(null); }}
+                              style={{
+                                background: "none", border: "1px solid var(--cardBorder)", color: "var(--textMuted)",
+                                fontSize: 12, fontWeight: 700, borderRadius: 10, padding: "7px 12px",
+                                cursor: "pointer", fontFamily: "inherit",
+                              }}
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              onClick={() => { onDeleteSession?.(s); setConfirmId(null); setExpandedId(null); }}
+                              style={{
+                                background: "#ef4444", border: "none", color: "#fff",
+                                fontSize: 12, fontWeight: 800, borderRadius: 10, padding: "7px 12px",
+                                cursor: "pointer", fontFamily: "inherit",
+                              }}
+                            >
+                              Sí, eliminar
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -4464,6 +4518,15 @@ export default function SuperLista() {
     ));
   }, [activeListId]);
 
+  // Delete a single purchase from "Registro de compras" in Estadísticas.
+  // Matches by id when present (new sessions), falling back to date for
+  // older history entries created before sessions carried a stable id.
+  const handleDeleteSession = useCallback((session) => {
+    setHistory(prev => prev.filter(s =>
+      session.id ? s.id !== session.id : s.date !== session.date
+    ));
+  }, []);
+
   const handleOpenList   = useCallback((id) => { setActiveListId(id); setView("list"); }, []);
   const handleDeleteList = useCallback((id) => setLists(prev => prev.filter(l => l.id !== id)), []);
   const handleCreateList = useCallback((name) => {
@@ -4522,7 +4585,7 @@ export default function SuperLista() {
                 onCreateList={handleCreateList} />
             </div>
             <div style={{ width:`${TAB_W}%`, height:"100%", flexShrink:0, minHeight:0, display:"flex", flexDirection:"column", overflow:"hidden" }}>
-              <StatsView history={history} budget={profile.budget} sym={sym} />
+              <StatsView history={history} budget={profile.budget} sym={sym} onDeleteSession={handleDeleteSession} />
             </div>
           </SwipeTabContainer>
         )}
@@ -4555,7 +4618,8 @@ export default function SuperLista() {
           initialTab={profileTab}
           onClose={() => { setShowProfile(false); setNavActive(""); setProfileTab("profile"); }}
           onSaveProfile={(p) => setProfile(p)}
-          onSaveSettings={(s) => setSettings(s)} />
+          onSaveSettings={(s) => setSettings(s)}
+          onDeleteSession={handleDeleteSession} />
       )}
 
       {/* ── Android back-button exit toast ── */}

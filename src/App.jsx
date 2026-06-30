@@ -1582,8 +1582,9 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
     setTimeout(() => { setExiting(false); onToggle(item.id); }, 160);
   }, [item.id, item.emoji, onToggle]);
 
-  // Quick-add to cart: skips straight to "cart" stage from inventory or shopping,
-  // independent of the regular advance-one-stage toggle. Same celebratory feel as handleCheck.
+  // Quick-add to cart: skips straight to "cart" stage. Only rendered on the
+  // "shopping" stage row (see below) — intentionally not available from
+  // Inventario, so that flow stays inventory → shopping → cart.
   const handleQuickCart = useCallback((e) => {
     if (e) e.stopPropagation();
     Sounds.checkItem();
@@ -1769,16 +1770,10 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
           <button onClick={(e) => { e.stopPropagation(); Sounds.qtyChange(); onQtyPlus(item.id); }}
             style={{ background:"#EEEAE2", border:"1px solid var(--border)", color:"#1A2118", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
         </div>
-
-        {/* ── Quick-add to Carrito ── */}
-        <button onClick={handleQuickCart} title="Añadir al carrito"
-          style={{ background:"var(--accent)", border:"none", color:"#FFFFFF", width:30, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, boxShadow:"0 2px 6px color-mix(in srgb, var(--accent) 40%, transparent)", transition:"transform .14s var(--ease-spring)" }}
-          onMouseDown={(e) => { e.currentTarget.style.transform="scale(0.88)"; }}
-          onMouseUp={(e)   => { e.currentTarget.style.transform="scale(1)"; }}
-          onTouchStart={(e) => { e.currentTarget.style.transform="scale(0.88)"; }}
-          onTouchEnd={(e)   => { e.currentTarget.style.transform="scale(1)"; }}>
-          🛒
-        </button>
+        {/* No Quick-add-to-Carrito shortcut here on purpose: from Inventario, selecting an
+            item should always advance one stage at a time (→ Lista de Compras first). Jumping
+            straight to Carrito from here skips the intended flow — that shortcut only makes
+            sense once an item is already in Lista de Compras (see the "shopping" stage row). */}
       </div>
     </div>
   );
@@ -2122,8 +2117,9 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
   }, [onDeleteItem, onUpdateItem]);
   const handleQtyMinus = useCallback((id) => onUpdateItem(id, it => ({ ...it, qty:Math.max(1,(it.qty||1)-1) })), [onUpdateItem]);
   const handleQtyPlus  = useCallback((id) => onUpdateItem(id, it => ({ ...it, qty:(it.qty||1)+1 })), [onUpdateItem]);
-  // Quick-add: jumps an Inventario or Lista de Compras item straight into the Carrito,
-  // regardless of which stage it was in — keeps whatever qty it already had.
+  // Quick-add: jumps a Lista de Compras item straight into the Carrito.
+  // Only exposed from the "shopping" stage row now — from Inventario, items
+  // must pass through Lista de Compras first to keep the 3-stage flow intact.
   const handleAddToCart = useCallback((id) => onUpdateItem(id, it => ({ ...it, stage:"cart" })), [onUpdateItem]);
   // "−" inside the Carrito: above qty 1 it just decrements; at qty 1 it sends the item
   // back to Lista de Compras instead of deleting it (so it isn't lost off the list).

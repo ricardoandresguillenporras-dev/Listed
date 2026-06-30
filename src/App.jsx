@@ -1457,7 +1457,7 @@ function EditModal({ item, onClose, onSave, sym }) {
 }
 
 // ── SwipeItem ─────────────────────────────────────────────────────────────────
-const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlus, onDelete, onContextMenu, editingPriceId, tempPrice, setTempPrice, setEditingPriceId, savePrice, sym }) {
+const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlus, onAddToCart, onCartMinus, onDelete, onContextMenu, editingPriceId, tempPrice, setTempPrice, setEditingPriceId, savePrice, sym }) {
   // item.stage: "inventory" | "shopping" | "cart"
   // Swiping left always means "remove from this sub-list":
   //   - in inventory     → actually delete the item
@@ -1582,6 +1582,17 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
     setTimeout(() => { setExiting(false); onToggle(item.id); }, 160);
   }, [item.id, item.emoji, onToggle]);
 
+  // Quick-add to cart: skips straight to "cart" stage from inventory or shopping,
+  // independent of the regular advance-one-stage toggle. Same celebratory feel as handleCheck.
+  const handleQuickCart = useCallback((e) => {
+    if (e) e.stopPropagation();
+    Sounds.checkItem();
+    const r = e?.currentTarget?.getBoundingClientRect();
+    if (r) { spawnConfetti(r.left+r.width/2,r.top+r.height/2,14); spawnEmojiParticle(r.left+r.width/2,r.top,"🛒"); }
+    setExiting(true);
+    setTimeout(() => { setExiting(false); onAddToCart(item.id); }, 160);
+  }, [item.id, onAddToCart]);
+
   // ── Cart item: in-the-bag style ─────────────────────────────────────────────
   if (stage === "cart") {
     return (
@@ -1616,6 +1627,17 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
             {item.price && (
               <span style={{ fontSize:11, color:"var(--accent)", fontWeight:600 }}>{sym}{Math.round(subtotal).toLocaleString()}</span>
             )}
+          </div>
+
+          {/* qty stepper — at 1, "−" sends the item back to Lista de Compras */}
+          <div style={{ display:"flex", alignItems:"center", gap:2, flexShrink:0 }} onClick={(e) => e.stopPropagation()}>
+            <button onClick={(e) => { e.stopPropagation(); Sounds.qtyChange(); onCartMinus(item.id, qty); }}
+              style={{ background:"#FFFFFF", border:"1px solid var(--border)", color:"var(--accentDark)", width:26, height:26, borderRadius:"var(--radius-sm,10px)", fontSize:15, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              {qty===1 ? "↩" : "−"}
+            </button>
+            <span style={{ fontSize:13, fontWeight:800, minWidth:18, textAlign:"center", color:"var(--accentDark)", opacity:.9 }}>{qty}</span>
+            <button onClick={(e) => { e.stopPropagation(); Sounds.qtyChange(); onQtyPlus(item.id); }}
+              style={{ background:"#FFFFFF", border:"1px solid var(--border)", color:"var(--accentDark)", width:26, height:26, borderRadius:"var(--radius-sm,10px)", fontSize:15, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
           </div>
 
           {/* 🛍 in-bag chip */}
@@ -1679,6 +1701,16 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
             <button onClick={(e) => { e.stopPropagation(); Sounds.qtyChange(); onQtyPlus(item.id); }}
               style={{ background:"var(--soft,#EEEAE2)", border:"1px solid var(--border)", color:"var(--textPrimary,#1A2118)", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
           </div>
+
+          {/* ── Quick-add to Carrito ── */}
+          <button onClick={handleQuickCart} title="Añadir al carrito"
+            style={{ background:"var(--sl-section-shopping-color,#0369A1)", border:"none", color:"#FFFFFF", width:30, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, boxShadow:"0 2px 6px rgba(3,105,161,.28)", transition:"transform .14s var(--ease-spring)" }}
+            onMouseDown={(e) => { e.currentTarget.style.transform="scale(0.88)"; }}
+            onMouseUp={(e)   => { e.currentTarget.style.transform="scale(1)"; }}
+            onTouchStart={(e) => { e.currentTarget.style.transform="scale(0.88)"; }}
+            onTouchEnd={(e)   => { e.currentTarget.style.transform="scale(1)"; }}>
+            🛒
+          </button>
         </div>
       </div>
     );
@@ -1737,6 +1769,16 @@ const SwipeItem = memo(function SwipeItem({ item, onToggle, onQtyMinus, onQtyPlu
           <button onClick={(e) => { e.stopPropagation(); Sounds.qtyChange(); onQtyPlus(item.id); }}
             style={{ background:"#EEEAE2", border:"1px solid var(--border)", color:"#1A2118", width:28, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>+</button>
         </div>
+
+        {/* ── Quick-add to Carrito ── */}
+        <button onClick={handleQuickCart} title="Añadir al carrito"
+          style={{ background:"var(--accent)", border:"none", color:"#FFFFFF", width:30, height:28, borderRadius:"var(--radius-sm,10px)", fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, boxShadow:"0 2px 6px color-mix(in srgb, var(--accent) 40%, transparent)", transition:"transform .14s var(--ease-spring)" }}
+          onMouseDown={(e) => { e.currentTarget.style.transform="scale(0.88)"; }}
+          onMouseUp={(e)   => { e.currentTarget.style.transform="scale(1)"; }}
+          onTouchStart={(e) => { e.currentTarget.style.transform="scale(0.88)"; }}
+          onTouchEnd={(e)   => { e.currentTarget.style.transform="scale(1)"; }}>
+          🛒
+        </button>
       </div>
     </div>
   );
@@ -2080,6 +2122,15 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
   }, [onDeleteItem, onUpdateItem]);
   const handleQtyMinus = useCallback((id) => onUpdateItem(id, it => ({ ...it, qty:Math.max(1,(it.qty||1)-1) })), [onUpdateItem]);
   const handleQtyPlus  = useCallback((id) => onUpdateItem(id, it => ({ ...it, qty:(it.qty||1)+1 })), [onUpdateItem]);
+  // Quick-add: jumps an Inventario or Lista de Compras item straight into the Carrito,
+  // regardless of which stage it was in — keeps whatever qty it already had.
+  const handleAddToCart = useCallback((id) => onUpdateItem(id, it => ({ ...it, stage:"cart" })), [onUpdateItem]);
+  // "−" inside the Carrito: above qty 1 it just decrements; at qty 1 it sends the item
+  // back to Lista de Compras instead of deleting it (so it isn't lost off the list).
+  const handleCartMinus = useCallback((id, qty) => {
+    if (qty <= 1) { Sounds.checkItem(); onUpdateItem(id, it => ({ ...it, stage:"shopping" })); }
+    else onUpdateItem(id, it => ({ ...it, qty: qty - 1 }));
+  }, [onUpdateItem]);
 
   const { all, inventory, shopping, cart, done, tot, inBagCost, shoppingCost, remaining, overBudget, budgetPct } = useMemo(() => {
     const all       = searchQuery ? list.items.filter(i => normalizeSearch(i.name).includes(normalizeSearch(searchQuery))) : list.items;
@@ -2221,6 +2272,7 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
             onToggle={handleToggle}
             onQtyMinus={handleQtyMinus}
             onQtyPlus={handleQtyPlus}
+            onAddToCart={handleAddToCart}
             onDelete={handleSwipeRemove} onContextMenu={setContextItemId}
             editingPriceId={editingPriceId} tempPrice={tempPrice}
             setTempPrice={setTempPrice} setEditingPriceId={setEditingPriceId} savePrice={savePrice}
@@ -2251,6 +2303,7 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
             onToggle={handleToggle}
             onQtyMinus={handleQtyMinus}
             onQtyPlus={handleQtyPlus}
+            onAddToCart={handleAddToCart}
             onDelete={handleSwipeRemove} onContextMenu={setContextItemId}
             editingPriceId={editingPriceId} tempPrice={tempPrice}
             setTempPrice={setTempPrice} setEditingPriceId={setEditingPriceId} savePrice={savePrice}
@@ -2306,6 +2359,7 @@ function ListView({ list, onBack, onUpdateItem, onDeleteItem, onGoAdd, sym, budg
             onToggle={handleToggle}
             onQtyMinus={handleQtyMinus}
             onQtyPlus={handleQtyPlus}
+            onCartMinus={handleCartMinus}
             onDelete={handleSwipeRemove} onContextMenu={setContextItemId}
             editingPriceId={editingPriceId} tempPrice={tempPrice}
             setTempPrice={setTempPrice} setEditingPriceId={setEditingPriceId} savePrice={savePrice}

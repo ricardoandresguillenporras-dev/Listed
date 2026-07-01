@@ -758,9 +758,12 @@ function SheetHandle({ handleProps, color }) {
   );
 }
 
-// Renders the best emoji for an item — specific item first, then category fallback, then item emoji
+// Renders the icon for an item — the item's own stored emoji always wins
+// (it's what the user explicitly picked in the emoji picker / edit modal),
+// falling back to the known-name preset, then the category default, only
+// when the item has no emoji of its own (e.g. freshly created with none set).
 function ItemIcon({ name, category, emoji, size=32, emojiSize=24 }) {
-  const icon = ITEM_ICONS[name] || CAT_ICONS[category] || emoji;
+  const icon = emoji || ITEM_ICONS[name] || CAT_ICONS[category];
   return <span style={{ fontSize:emojiSize, width:size, textAlign:"center", lineHeight:1, flexShrink:0, display:"inline-block" }}>{icon}</span>;
 }
 
@@ -2424,11 +2427,15 @@ const EMOJI_PALETTE = [
   // Bebidas
   "☕","🧃","🥤","🍵","🧋","🍺","🍷","🥂","💧","🧉","🫖",
   // Condimentos & despensa
-  "🍯","🧂","🫙","🫕","🥣","🧈","🥫","🍿","🫙",
+  "🍯","🧂","🫙","🫕","🥣","🧈","🥫","🍿",
   // Higiene & limpieza
   "🧴","🧼","🧻","🪥","🧽","🪣","🫧","🧹","🪒","💊","🩺",
   // Varios & hogar
   "🛒","🛍","📦","🎁","🌿","🌸","⭐","✨","🔥","💡","🏠","🍴","🥄","🔪",
+  // Más frutas & verduras
+  "🍌","🍉","🍆","🥒","🌶️","🍄","🥜","🥥","🫛",
+  // Comidas preparadas & snacks
+  "🍔","🍕","🌮","🥙","🍣","🍤","🥯","🍜","🍲","🥘","🍛","🍱","🥗","🍳","🥪","🧁",
 ];
 
 // ── AddItemsView ──────────────────────────────────────────────────────────────
